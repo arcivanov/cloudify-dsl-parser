@@ -48,14 +48,12 @@ VERSION = 'tosca_definitions_version'
 NODE_TEMPLATES = 'node_templates'
 IMPORTS = 'imports'
 NODE_TYPES = 'node_types'
-TYPE_IMPLEMENTATIONS = 'type_implementations'
 PLUGINS = 'plugins'
 INTERFACES = 'interfaces'
 SOURCE_INTERFACES = 'source_interfaces'
 TARGET_INTERFACES = 'target_interfaces'
 WORKFLOWS = 'workflows'
 RELATIONSHIPS = 'relationships'
-RELATIONSHIP_IMPLEMENTATIONS = 'relationship_implementations'
 PROPERTIES = 'properties'
 PARAMETERS = 'parameters'
 TYPE_HIERARCHY = 'type_hierarchy'
@@ -194,12 +192,6 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
         top_level_relationships = _process_relationships(
             combined_parsed_dsl, resource_base)
 
-        type_impls = _get_dict_prop(combined_parsed_dsl, TYPE_IMPLEMENTATIONS)\
-            .copy()
-        relationship_impls = _get_dict_prop(
-            combined_parsed_dsl,
-            RELATIONSHIP_IMPLEMENTATIONS).copy()
-
         plugins = _get_dict_prop(combined_parsed_dsl, PLUGINS)
         processed_plugins = dict((name, _process_plugin(plugin, name,
                                                         dsl_version))
@@ -207,8 +199,8 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
 
         processed_nodes = map(lambda node_name_and_node: _process_node(
             node_name_and_node[0], node_name_and_node[1], combined_parsed_dsl,
-            top_level_relationships, node_names_set, type_impls,
-            relationship_impls, processed_plugins, resource_base),
+            top_level_relationships, node_names_set, processed_plugins,
+            resource_base),
             nodes.iteritems())
 
         inputs = combined_parsed_dsl.get(INPUTS, {})
@@ -218,8 +210,6 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
                             _get_dict_prop(combined_parsed_dsl, NODE_TYPES),
                             _get_dict_prop(combined_parsed_dsl, RELATIONSHIPS),
                             processed_plugins,
-                            type_impls,
-                            relationship_impls,
                             resource_base)
 
         processed_workflows = _process_workflows(
@@ -267,7 +257,6 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
 
 
 def _post_process_nodes(processed_nodes, types, relationships, plugins,
-                        type_impls, relationship_impls,
                         resource_base):
     node_name_to_node = dict((node['id'], node) for node in processed_nodes)
 
@@ -329,8 +318,6 @@ def _post_process_nodes(processed_nodes, types, relationships, plugins,
             deployment_plugins_to_install.values()
 
     _validate_agent_plugins_on_host_nodes(processed_nodes)
-    _validate_type_impls(type_impls)
-    _validate_relationship_impls(relationship_impls)
 
 
 def _create_type_hierarchy(type_name, types):
@@ -474,33 +461,6 @@ def _extract_plugin_names_and_operation_mapping_from_interface(
                 resource_base)
         result.append(op_descriptor)
     return result
-
-
-def _validate_type_impls(type_impls):
-    for impl_name, impl_content in type_impls.iteritems():
-        node_ref = impl_content['node_ref']
-        ex = \
-            DSLParsingLogicException(
-                110, '\'{0}\' type implementation has a reference to a '
-                     'node which does not exist named \'{1}\''.
-                format(impl_name, node_ref))
-        ex.implementation = impl_name
-        ex.node_ref = node_ref
-        raise ex
-
-
-def _validate_relationship_impls(relationship_impls):
-    for impl_name, impl_content in relationship_impls.iteritems():
-        source_node_ref = impl_content['source_node_ref']
-        target_node_ref = impl_content['target_node_ref']
-        ex = \
-            DSLParsingLogicException(
-                111, '\'{0}\' relationship implementation between \'{1}->{'
-                     '2}\' is not mapped to any matching node relationship'.
-                format(impl_name, source_node_ref, target_node_ref))
-        ex.implementation = impl_name
-        ex.source_node_ref = source_node_ref
-        raise ex
 
 
 def _validate_relationship_fields(rel_obj, plugins, rel_name, resource_base):
@@ -894,7 +854,6 @@ def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
                     .format(policy_name, group, policy['type']))
             merged_properties = merge_schema_and_instance_properties(
                 policy.get(PROPERTIES, {}),
-                {},
                 policy_types[policy['type']].get(PROPERTIES, {}),
                 '{0} \'{1}\' property is not part of '
                 'the policy type properties schema',
@@ -917,7 +876,6 @@ def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
                                 group, trigger['type']))
                 merged_parameters = merge_schema_and_instance_properties(
                     trigger.get(PARAMETERS, {}),
-                    {},
                     policy_triggers[trigger['type']].get(PARAMETERS, {}),
                     '{0} \'{1}\' property is not part of '
                     'the policy type properties schema',
@@ -931,16 +889,11 @@ def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
 
 
 def _process_node_relationships(node, node_name, node_names_set,
-                                processed_node, top_level_relationships,
-                                relationship_impls):
+                                processed_node, top_level_relationships):
     if RELATIONSHIPS in node:
         relationships = []
         for relationship in node[RELATIONSHIPS]:
             relationship_type = relationship['type']
-            relationship_type, impl_properties = \
-                _get_relationship_implementation_if_exists(
-                    node_name, relationship['target'], relationship_impls,
-                    relationship_type, top_level_relationships)
             relationship['type'] = relationship_type
             # validating only the instance relationship values - the inherited
             # relationship values if any
@@ -984,7 +937,6 @@ def _process_node_relationships(node, node_name, node_names_set,
             complete_relationship[PROPERTIES] = \
                 merge_schema_and_instance_properties(
                     _get_dict_prop(relationship, PROPERTIES),
-                    impl_properties,
                     _get_dict_prop(relationship_complete_type, PROPERTIES),
                     '{0} node relationship \'{1}\' property is not part of '
                     'the derived relationship type properties schema',
@@ -1001,95 +953,6 @@ def _process_node_relationships(node, node_name, node_names_set,
             relationships.append(complete_relationship)
 
         processed_node[RELATIONSHIPS] = relationships
-
-
-def _get_implementation(lookup_message_str, type_name, implementations,
-                        impl_category, types, err_code_ambig,
-                        err_code_derive, candidate_func):
-    candidates = dict((impl_name, impl_content) for impl_name, impl_content in
-                      implementations.iteritems() if
-                      candidate_func(impl_content))
-
-    if len(candidates) > 1:
-        ex = \
-            DSLParsingLogicException(
-                err_code_ambig, 'Ambiguous implementation of {0} {1} detected,'
-                ' more than one candidate - {2}'.format(impl_category,
-                                                        lookup_message_str,
-                                                        candidates.keys()))
-        ex.implementations = list(candidates.keys())
-        raise ex
-
-    if len(candidates) == 0:
-        return None
-
-    impl = candidates.values()[0]
-    impl_name = candidates.keys()[0]
-    impl_type = impl['type']
-    if not _is_derived_from(impl_type, types, type_name):
-        ex = \
-            DSLParsingLogicException(
-                err_code_derive,
-                'Type of implementation {0} of {1} {2} is not equal or'
-                ' derives from the node type - {3} cannot replace {4}'
-                .format(impl_name, impl_category, lookup_message_str,
-                        impl_type, type_name))
-        ex.implementation = impl_name
-        raise ex
-
-    del implementations[impl_name]
-
-    return impl
-
-
-def _get_type_implementation_if_exists(node_name, node_type_name,
-                                       type_implementations, types):
-
-    def candidate_function(impl_content):
-        return impl_content['node_ref'] == node_name
-
-    impl = _get_implementation(node_name,
-                               node_type_name,
-                               type_implementations,
-                               'node',
-                               types,
-                               103,
-                               102,
-                               candidate_function)
-    if impl is None:
-        return node_type_name, dict()
-
-    impl_type = impl['type']
-
-    return impl_type, _get_dict_prop(impl, 'properties')
-
-
-def _get_relationship_implementation_if_exists(source_node_name,
-                                               target_node_name,
-                                               relationship_impls,
-                                               relationship_type,
-                                               relationships):
-    def candidate_function(impl_content):
-        return \
-            impl_content['source_node_ref'] == source_node_name and \
-            impl_content['target_node_ref'] == target_node_name and \
-            _is_derived_from(impl_content['type'], relationships,
-                             relationship_type)
-
-    impl = _get_implementation('{0}->{1}'.format(source_node_name,
-                                                 target_node_name),
-                               relationship_type,
-                               relationship_impls,
-                               'relationship',
-                               relationships,
-                               108,
-                               109,
-                               candidate_function)
-
-    if impl is None:
-        return relationship_type, dict()
-
-    return impl['type'], _get_dict_prop(impl, PROPERTIES)
 
 
 def _operation_struct(plugin_name,
@@ -1120,9 +983,10 @@ def _workflow_operation_struct(plugin_name,
 
 
 def _process_node(node_name, node, parsed_dsl,
-                  top_level_relationships, node_names_set, type_impls,
-                  relationship_impls, plugins, resource_base):
+                  top_level_relationships, node_names_set, plugins,
+                  resource_base):
     declared_node_type_name = node['type']
+    node_type_name = declared_node_type_name
     processed_node = {'name': node_name,
                       'id': node_name,
                       'declared_type': declared_node_type_name}
@@ -1136,11 +1000,6 @@ def _process_node(node_name, node, parsed_dsl,
                               NODE_TYPES in parsed_dsl else 'None')
         raise DSLParsingLogicException(7, err_message)
 
-    node_type_name, impl_properties = \
-        _get_type_implementation_if_exists(
-            node_name, declared_node_type_name,
-            type_impls,
-            parsed_dsl[NODE_TYPES])
     processed_node['type'] = node_type_name
 
     node_type = parsed_dsl[NODE_TYPES][node_type_name]
@@ -1148,8 +1007,7 @@ def _process_node(node_name, node, parsed_dsl,
                                                 node_type_name,
                                                 parsed_dsl[NODE_TYPES],
                                                 node_name,
-                                                node,
-                                                impl_properties)
+                                                node)
     processed_node[PROPERTIES] = complete_node_type[PROPERTIES]
     processed_node[PLUGINS] = {}
     # handle plugins and operations
@@ -1166,8 +1024,7 @@ def _process_node(node_name, node, parsed_dsl,
 
     # handle relationships
     _process_node_relationships(node, node_name, node_names_set,
-                                processed_node, top_level_relationships,
-                                relationship_impls)
+                                processed_node, top_level_relationships)
 
     processed_node[PROPERTIES]['cloudify_runtime'] = {}
 
@@ -1270,8 +1127,7 @@ def _extract_complete_node(node_type,
                            node_type_name,
                            node_types,
                            node_name,
-                           node,
-                           impl_properties):
+                           node):
 
     complete_type = extract_complete_node_type(
         node_type=node_type,
@@ -1286,7 +1142,6 @@ def _extract_complete_node(node_type,
             node_template=node),
         PROPERTIES: merge_schema_and_instance_properties(
             _get_dict_prop(node, PROPERTIES),
-            impl_properties,
             _get_dict_prop(complete_type, PROPERTIES),
             '{0} node \'{1}\' property is not part of the derived'
             ' type properties schema',
@@ -1319,11 +1174,8 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
                     4, 'Failed on import: Could not merge {0} due to conflict '
                        'on path {1}'.format(top_level_key, ' --> '.join(path)))
 
-    # TODO: Find a solution for top level workflows, which should be probably
-    # somewhat merged with override
     merge_no_override = set([INTERFACES, NODE_TYPES, PLUGINS, WORKFLOWS,
-                             TYPE_IMPLEMENTATIONS, RELATIONSHIPS,
-                             RELATIONSHIP_IMPLEMENTATIONS,
+                             RELATIONSHIPS,
                              POLICY_TYPES, GROUPS, POLICY_TRIGGERS])
 
     combined_parsed_dsl = copy.deepcopy(parsed_dsl)

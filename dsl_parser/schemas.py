@@ -450,28 +450,6 @@ DSL_SCHEMA = {
                 }
             }
         },
-        'type_implementations': {
-            'type': 'object',
-            'patternProperties': {
-                '^': {
-                    'type': 'object',
-                    'properties': {
-                        #non-meta 'properties'
-                        'properties': {
-                            'type': 'object'
-                        },
-                        'type': {
-                            'type': 'string'
-                        },
-                        'node_ref': {
-                            'type': 'string'
-                        },
-                    },
-                    'required': ['node_ref', 'type'],
-                    'additionalProperties': False
-                }
-            }
-        },
         'workflows': WORKFLOWS_SCHEMA,
         'relationships': {
             'type': 'object',
@@ -487,32 +465,6 @@ DSL_SCHEMA = {
                         #non-meta 'properties'
                         'properties': PROPERTIES_SCHEMA_SCHEMA
                     },
-                    'additionalProperties': False
-                }
-            }
-        },
-        'relationship_implementations': {
-            'type': 'object',
-            'patternProperties': {
-                '^': {
-                    'type': 'object',
-                    'properties': {
-                        'type': {
-                            'type': 'string'
-                        },
-                        'source_node_ref': {
-                            'type': 'string'
-                        },
-                        'target_node_ref': {
-                            'type': 'string'
-                        },
-                        #non-meta 'properties'
-                        'properties': {
-                            'type': 'object'
-                        },
-                    },
-                    'required': ['source_node_ref', 'target_node_ref',
-                                 'type'],
                     'additionalProperties': False
                 }
             }

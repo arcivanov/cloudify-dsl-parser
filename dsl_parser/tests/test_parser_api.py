@@ -525,23 +525,6 @@ node_types:
         self.assertEqual('test_type_parent', node[TYPE_HIERARCHY][1])
         self.assertEqual('test_type', node[TYPE_HIERARCHY][2])
 
-    def test_types_hierarchy_with_node_type_impl(self):
-        yaml = self.create_yaml_with_imports([self.MINIMAL_BLUEPRINT]) + """
-node_types:
-    specific_test_type:
-        derived_from: test_type
-
-type_implementations:
-    implementation_of_specific_test_type:
-        type: specific_test_type
-        node_ref: test_node
-"""
-        result = self.parse(yaml)
-        node = result['nodes'][0]
-        self.assertEqual(2, len(node[TYPE_HIERARCHY]))
-        self.assertEqual('test_type', node[TYPE_HIERARCHY][0])
-        self.assertEqual('specific_test_type', node[TYPE_HIERARCHY][1])
-
     def test_type_properties_recursive_derivation(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
 node_types:
@@ -1291,46 +1274,18 @@ relationships:
             prop1: {}
             prop2: {}
             prop7: {}
-    test_relationship:
-        derived_from: empty_relationship
-        properties:
-            prop1: {}
-            prop2:
-                default: prop2_value
-            prop3:
-                default: prop3_value
-            prop4: {}
-            prop5:
-                default: prop5_value
-            prop6:
-                default: prop6_value
-relationship_implementations:
-    impl1:
-        type: test_relationship
-        source_node_ref: test_node2
-        target_node_ref: test_node
-        properties:
-            prop4: prop4_value_new
-            prop5: prop5_value_new
-            prop7: prop7_value_new_impl
 """
         result = self.parse(yaml)
         self.assertEquals(2, len(result['nodes']))
         nodes = self._sort_result_nodes(result['nodes'], ['test_node',
                                                           'test_node2'])
         relationships = result['relationships']
-        self.assertEquals(2, len(relationships))
-        r_properties = relationships['test_relationship']['properties']
-        self.assertEquals(7, len(r_properties))
+        self.assertEquals(1, len(relationships))
         i_properties = nodes[1]['relationships'][0]['properties']
-        self.assertEquals(7, len(i_properties))
+        self.assertEquals(3, len(i_properties))
         self.assertEquals('prop1_value_new', i_properties['prop1'])
         self.assertEquals('prop2_value_new', i_properties['prop2'])
-        self.assertEquals('prop3_value', i_properties['prop3'])
-        self.assertEquals('prop4_value_new', i_properties['prop4'])
-        self.assertEquals('prop5_value_new', i_properties['prop5'])
-        self.assertEquals('prop6_value', i_properties['prop6'])
-        self.assertEquals('prop7_value_new_impl', i_properties['prop7'])
+        self.assertEquals('prop7_value_new_instance', i_properties['prop7'])
 
     def test_relationships_and_node_recursive_inheritance(self):
         # testing for a complete inheritance path for relationships
@@ -2489,119 +2444,6 @@ plugins:
             op_struct('test_plugin', 'install', {'key': 'value'},
                       executor='central_deployment_agent'),
             rel1_source_ops['test_interface1.install'])
-
-    def test_type_implementation(self):
-        yaml = self.create_yaml_with_imports([self.MINIMAL_BLUEPRINT]) + """
-node_types:
-    specific_test_type:
-        derived_from: test_type
-
-type_implementations:
-    implementation_of_specific_test_type:
-        type: specific_test_type
-        node_ref: test_node
-"""
-        result = self.parse(yaml)
-        self._assert_minimal_blueprint(result,
-                                       expected_type='specific_test_type',
-                                       expected_declared_type='test_type')
-
-    def test_type_implementation_with_new_properties(self):
-        yaml = self.create_yaml_with_imports([self.MINIMAL_BLUEPRINT]) + """
-node_types:
-    specific_test_type:
-        derived_from: test_type
-        properties:
-            mandatory: {}
-            new_prop:
-                default: 'default'
-
-type_implementations:
-    implementation_of_specific_test_type:
-        type: specific_test_type
-        node_ref: test_node
-        properties:
-            mandatory: mandatory_value
-"""
-        result = self.parse(yaml)
-        self._assert_minimal_blueprint(result,
-                                       expected_type='specific_test_type',
-                                       expected_declared_type='test_type')
-        node = result['nodes'][0]
-        self.assertEquals('mandatory_value', node['properties']['mandatory'])
-        self.assertEquals('default', node['properties']['new_prop'])
-
-    def test_relationship_implementations(self):
-        yaml = self.create_yaml_with_imports([self.MINIMAL_BLUEPRINT + """
-    test_node2:
-        type: test_type
-        relationships:
-            - type: test_relationship
-              target: test_node
-relationships:
-    test_relationship: {} """]) + """
-
-relationships:
-    specific_test_relationship:
-        derived_from: test_relationship
-
-relationship_implementations:
-    specific_test_relationship_impl:
-        type: specific_test_relationship
-        source_node_ref: test_node2
-        target_node_ref: test_node
-"""
-        result = self.parse(yaml)
-        self.assertEquals(2, len(result['nodes']))
-        nodes = self._sort_result_nodes(result['nodes'], ['test_node',
-                                                          'test_node2'])
-        source_node = nodes[1]
-        self.assertEquals(1, len(source_node['relationships']))
-        node_relationship = source_node['relationships'][0]
-        self.assertEquals('specific_test_relationship',
-                          node_relationship['type'])
-
-    def test_relationship_two_types_implementations(self):
-        yaml = self.create_yaml_with_imports([self.MINIMAL_BLUEPRINT + """
-    test_node2:
-        type: test_type
-        relationships:
-            - type: test_relationship1
-              target: test_node
-            - type: test_relationship2
-              target: test_node
-relationships:
-    test_relationship1: {}
-    test_relationship2: {} """]) + """
-
-relationships:
-    specific_test_relationship1:
-        derived_from: test_relationship1
-    specific_test_relationship2:
-        derived_from: test_relationship2
-
-relationship_implementations:
-    specific_test_relationship1_impl:
-        type: specific_test_relationship1
-        source_node_ref: test_node2
-        target_node_ref: test_node
-    specific_test_relationship2_impl:
-        type: specific_test_relationship2
-        source_node_ref: test_node2
-        target_node_ref: test_node
-"""
-        result = self.parse(yaml)
-        self.assertEquals(2, len(result['nodes']))
-        nodes = self._sort_result_nodes(result['nodes'], ['test_node',
-                                                          'test_node2'])
-        source_node = nodes[1]
-        self.assertEquals(2, len(source_node['relationships']))
-        node_relationship1 = source_node['relationships'][0]
-        self.assertEquals('specific_test_relationship1',
-                          node_relationship1['type'])
-        node_relationship2 = source_node['relationships'][1]
-        self.assertEquals('specific_test_relationship2',
-                          node_relationship2['type'])
 
     def test_no_workflows(self):
         result = self.parse(self.MINIMAL_BLUEPRINT)

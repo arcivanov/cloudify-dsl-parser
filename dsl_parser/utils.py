@@ -36,14 +36,10 @@ def flatten_schema(schema):
 
 def merge_schema_and_instance_properties(
         instance_properties,
-        impl_properties,
         schema_properties,
         undefined_property_error_message,
         missing_property_error_message,
         node_name):
-    instance_properties = dict(instance_properties.items() +
-                               impl_properties.items())
-
     flattened_schema_props = flatten_schema(schema_properties)
 
     # validate instance properties don't
