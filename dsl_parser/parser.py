@@ -90,7 +90,6 @@ def parse_from_url(dsl_url, resources_base_url=None):
     try:
         with contextlib.closing(urllib2.urlopen(dsl_url)) as f:
             dsl_string = f.read()
-        return _parse(dsl_string, resources_base_url, dsl_url)
     except urllib2.HTTPError as e:
         if e.code == 404:
             # HTTPError.__str__ uses the 'msg'.
@@ -99,6 +98,7 @@ def parse_from_url(dsl_url, resources_base_url=None):
             # that specifies the missing url.
             e.msg = '{0} not found'.format(e.filename)
         raise
+    return _parse(dsl_string, resources_base_url, dsl_url)
 
 
 def parse(dsl_string, resources_base_url=None):
@@ -121,14 +121,11 @@ def _dsl_location_to_url(dsl_location, resources_base_url):
 
 def _load_yaml(yaml_stream, error_message):
     try:
-        parsed_dsl = yaml.safe_load(yaml_stream)
+        # empty string returns None so we convert it to an empty dict
+        return yaml.safe_load(yaml_stream) or {}
     except yaml.parser.ParserError, ex:
         raise DSLParsingFormatException(-1, '{0}: Illegal yaml; {1}'
                                         .format(error_message, ex))
-    if parsed_dsl is None:
-        # empty yaml file
-        parsed_dsl = {}
-    return parsed_dsl
 
 
 def _create_plan_deployment_plugins(processed_nodes):
@@ -189,25 +186,28 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
         top_level_relationships = _process_relationships(
             combined_parsed_dsl, resource_base)
 
-        plugins = _get_dict_prop(combined_parsed_dsl, PLUGINS)
+        plugins = combined_parsed_dsl.get(PLUGINS, {})
         processed_plugins = dict((name, _process_plugin(plugin, name,
                                                         dsl_version))
                                  for (name, plugin) in plugins.items())
 
-        processed_nodes = map(lambda node_name_and_node: _process_node(
-            node_name_and_node[0], node_name_and_node[1], combined_parsed_dsl,
-            top_level_relationships, node_names_set, processed_plugins,
-            resource_base),
-            nodes.iteritems())
+        processed_nodes = [_process_node(node_name,
+                                         node,
+                                         combined_parsed_dsl,
+                                         top_level_relationships,
+                                         node_names_set,
+                                         processed_plugins,
+                                         resource_base)
+                           for node_name, node in nodes.iteritems()]
+
+        _post_process_nodes(processed_nodes,
+                            combined_parsed_dsl.get(NODE_TYPES, {}),
+                            combined_parsed_dsl.get(RELATIONSHIPS, {}),
+                            processed_plugins,
+                            resource_base)
 
         inputs = combined_parsed_dsl.get(INPUTS, {})
         outputs = combined_parsed_dsl.get(OUTPUTS, {})
-
-        _post_process_nodes(processed_nodes,
-                            _get_dict_prop(combined_parsed_dsl, NODE_TYPES),
-                            _get_dict_prop(combined_parsed_dsl, RELATIONSHIPS),
-                            processed_plugins,
-                            resource_base)
 
         processed_workflows = _process_workflows(
             combined_parsed_dsl.get(WORKFLOWS, {}),
@@ -253,7 +253,10 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
         parse_context.clear()
 
 
-def _post_process_nodes(processed_nodes, types, relationships, plugins,
+def _post_process_nodes(processed_nodes,
+                        types,
+                        relationships,
+                        plugins,
                         resource_base):
     node_name_to_node = dict((node['id'], node) for node in processed_nodes)
 
@@ -386,8 +389,11 @@ def _add_base_type_to_relationship(relationship,
     relationship['base'] = base
 
 
-def _process_context_operations(partial_error_message, interfaces, plugins,
-                                node, error_code, resource_base):
+def _process_context_operations(partial_error_message,
+                                interfaces, plugins,
+                                node,
+                                error_code,
+                                resource_base):
     operations = {}
     for interface_name, interface in interfaces.items():
         operation_mapping_context = \
@@ -625,7 +631,7 @@ def _process_relationships(combined_parsed_dsl, resource_base):
             relationship_types=relationship_types
         )
 
-        plugins = _get_dict_prop(combined_parsed_dsl, PLUGINS)
+        plugins = combined_parsed_dsl.get(PLUGINS, {})
         _validate_relationship_fields(relationship_type, plugins,
                                       relationship_type_name,
                                       resource_base)
@@ -885,8 +891,11 @@ def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
     return processed_groups
 
 
-def _process_node_relationships(node, node_name, node_names_set,
-                                processed_node, top_level_relationships):
+def _process_node_relationships(node,
+                                node_name,
+                                node_names_set,
+                                processed_node,
+                                top_level_relationships):
     if RELATIONSHIPS in node:
         relationships = []
         for relationship in node[RELATIONSHIPS]:
@@ -933,8 +942,8 @@ def _process_node_relationships(node, node_name, node_names_set,
             complete_relationship[TARGET_INTERFACES] = target_interfaces
             complete_relationship[PROPERTIES] = \
                 utils.merge_schema_and_instance_properties(
-                    _get_dict_prop(relationship, PROPERTIES),
-                    _get_dict_prop(relationship_complete_type, PROPERTIES),
+                    relationship.get(PROPERTIES, {}),
+                    relationship_complete_type.get(PROPERTIES, {}),
                     '{0} node relationship \'{1}\' property is not part of '
                     'the derived relationship type properties schema',
                     '{0} node relationship does not provide a '
@@ -979,8 +988,12 @@ def _workflow_operation_struct(plugin_name,
     }
 
 
-def _process_node(node_name, node, parsed_dsl,
-                  top_level_relationships, node_names_set, plugins,
+def _process_node(node_name,
+                  node,
+                  parsed_dsl,
+                  top_level_relationships,
+                  node_names_set,
+                  plugins,
                   resource_base):
     declared_node_type_name = node['type']
     node_type_name = declared_node_type_name
@@ -1031,7 +1044,9 @@ def _process_node(node_name, node, parsed_dsl,
     return processed_node
 
 
-def _extract_node_host_id(processed_node, node_name_to_node, host_types,
+def _extract_node_host_id(processed_node,
+                          node_name_to_node,
+                          host_types,
                           contained_in_rel_types):
     if processed_node['type'] in host_types:
         return processed_node['id']
@@ -1138,8 +1153,8 @@ def _extract_complete_node(node_type,
             node_type=complete_type,
             node_template=node),
         PROPERTIES: utils.merge_schema_and_instance_properties(
-            _get_dict_prop(node, PROPERTIES),
-            _get_dict_prop(complete_type, PROPERTIES),
+            node.get(PROPERTIES, {}),
+            complete_type.get(PROPERTIES, {}),
             '{0} node \'{1}\' property is not part of the derived'
             ' type properties schema',
             '{0} node does not provide a '
@@ -1153,10 +1168,6 @@ def _extract_complete_node(node_type,
     # merge schema and instance node properties
 
     return complete_node
-
-
-def _get_dict_prop(dictionary, prop_name):
-    return dictionary.get(prop_name, {})
 
 
 def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
@@ -1251,7 +1262,8 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
     return combined_parsed_dsl
 
 
-def _get_resource_location(resource_name, resources_base_url,
+def _get_resource_location(resource_name,
+                           resources_base_url,
                            current_resource_context=None):
     # Already url format
     if resource_name.startswith('http:')\
@@ -1283,7 +1295,8 @@ def _validate_url_exists(url):
         return False
 
 
-def _build_ordered_imports_list(parsed_dsl, ordered_imports_list,
+def _build_ordered_imports_list(parsed_dsl,
+                                ordered_imports_list,
                                 current_import,
                                 resources_base_url):
     def _build_ordered_imports_list_recursive(_parsed_dsl, _current_import):
