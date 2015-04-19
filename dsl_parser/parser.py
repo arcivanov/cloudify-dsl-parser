@@ -1303,29 +1303,6 @@ def _extract_complete_node(node_type,
     return complete_node
 
 
-def _replace_or_add_interface(merged_interfaces, interface_element):
-    # locate if this interface exists in the list
-    matching_interface = next((x for x in merged_interfaces if
-                               _get_interface_name(x) ==
-                               _get_interface_name(interface_element)), None)
-    # add if not
-    if matching_interface is None:
-        merged_interfaces.append(interface_element)
-    # replace with current interface element
-    else:
-        index_of_interface = merged_interfaces.index(matching_interface)
-        merged_interfaces[index_of_interface] = interface_element
-
-
-def _get_interface_name(interface_element):
-    return interface_element if isinstance(interface_element, basestring) else\
-        interface_element.iterkeys().next()
-
-
-def _get_list_prop(dictionary, prop_name):
-    return dictionary.get(prop_name, [])
-
-
 def _get_dict_prop(dictionary, prop_name):
     return dictionary.get(prop_name, {})
 
@@ -1348,7 +1325,6 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
                              TYPE_IMPLEMENTATIONS, RELATIONSHIPS,
                              RELATIONSHIP_IMPLEMENTATIONS,
                              POLICY_TYPES, GROUPS, POLICY_TRIGGERS])
-    merge_one_nested_level_no_override = dict()
 
     combined_parsed_dsl = copy.deepcopy(parsed_dsl)
 
@@ -1413,17 +1389,6 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
                     # level only, with no overrides
                     _merge_into_dict_or_throw_on_duplicate(
                         value, combined_parsed_dsl[key], key, [])
-                elif key in merge_one_nested_level_no_override:
-                    # this section will combine dictionary entries on up to one
-                    # nested level, yet without overrides
-                    for nested_key, nested_value in value.iteritems():
-                        if nested_key not in combined_parsed_dsl[key]:
-                            combined_parsed_dsl[key][nested_key] = nested_value
-                        else:
-                            _merge_into_dict_or_throw_on_duplicate(
-                                nested_value,
-                                combined_parsed_dsl[key][nested_key],
-                                key, [nested_key])
                 else:
                     # first level property is not white-listed for merge -
                     # throw an exception
