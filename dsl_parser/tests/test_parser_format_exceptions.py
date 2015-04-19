@@ -582,69 +582,6 @@ node_types:
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
 
-    def test_type_implementation_no_ref(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-type_implementations:
-    impl:
-        type: test_type
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_type_implementation_no_derived_from(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-type_implementations:
-    impl:
-        node_ref: test_node
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_type_implementation_properties_as_schema(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-type_implementations:
-    impl:
-        type: test_type
-        node_ref: test_node
-        properties:
-            - new_key: default
-
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_type_implementation_with_interfaces(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-type_implementations:
-    impl:
-        type: test_type
-        node_ref: test_node
-        interfaces:
-            test_interface1:
-                install:
-                  implementation: test_plugin.install
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_relationship_implementation_no_ref(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-relationship_implementations:
-    impl:
-        type: test_relationship
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_relationship_no_derived_from(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-relationship_implementations:
-    impl:
-        node_ref: test_node
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
     def test_relationship_properties_simple_dictionary_schema_format(self):
         yaml = self.MINIMAL_BLUEPRINT + """
 relationships:
