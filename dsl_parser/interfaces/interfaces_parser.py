@@ -14,19 +14,16 @@
 #    * limitations under the License.
 
 from dsl_parser.interfaces.interfaces_merger import InterfacesMerger
-from dsl_parser.interfaces.operation_merger import \
-    NodeTypeNodeTypeOperationMerger
-from dsl_parser.interfaces.operation_merger import \
-    RelationshipTypeRelationshipInstanceOperationMerger
-from dsl_parser.interfaces.operation_merger import \
-    RelationshipTypeRelationshipTypeOperationMerger
-from dsl_parser.interfaces.operation_merger import \
-    NodeTemplateNodeTypeOperationMerger
-from dsl_parser.interfaces.constants import INTERFACES
-from dsl_parser.interfaces.constants import SOURCE_INTERFACES
-from dsl_parser.interfaces.constants import TARGET_INTERFACES
-from dsl_parser import constants
-from dsl_parser import exceptions
+from dsl_parser.interfaces.operation_merger import (
+    NodeTypeNodeTypeOperationMerger,
+    RelationshipTypeRelationshipInstanceOperationMerger,
+    RelationshipTypeRelationshipTypeOperationMerger,
+    NodeTemplateNodeTypeOperationMerger)
+from dsl_parser.interfaces.constants import (INTERFACES,
+                                             SOURCE_INTERFACES,
+                                             TARGET_INTERFACES)
+from dsl_parser import (constants,
+                        exceptions)
 
 
 def merge_node_type_interfaces(overriding_node_type,

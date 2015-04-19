@@ -13,9 +13,9 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import random
 import copy
-from collections import namedtuple
+import collections
+import random
 
 import networkx as nx
 
@@ -66,9 +66,9 @@ class GraphContext(object):
     def get_node_instance_ids_by_node_id(self, node_id):
         return self.node_ids_to_node_instance_ids.get(node_id, set())
 
-Container = namedtuple('Container', 'node_instance '
-                                    'relationship_instance '
-                                    'current_host_instance_id')
+Container = collections.namedtuple('Container', 'node_instance '
+                                                'relationship_instance '
+                                                'current_host_instance_id')
 
 
 def build_node_graph(nodes):

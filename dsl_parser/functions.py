@@ -16,9 +16,9 @@
 import pkg_resources
 import abc
 
-from dsl_parser import constants
-from dsl_parser import exceptions
-from dsl_parser import scan
+from dsl_parser import (constants,
+                        exceptions,
+                        scan)
 
 
 SELF = 'SELF'

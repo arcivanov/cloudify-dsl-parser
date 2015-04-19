@@ -14,27 +14,25 @@
 #    * limitations under the License.
 
 
+import collections
 import os
 import copy
 import contextlib
-from urllib import pathname2url
-from urllib2 import urlopen, URLError, HTTPError
-from collections import namedtuple
+import urllib
+import urllib2
 
+import jsonschema
 import yaml
-from jsonschema import validate, ValidationError
-from yaml.parser import ParserError
+import yaml.parser
 
-from dsl_parser import constants
-from dsl_parser import functions
-from dsl_parser import models
-from dsl_parser import schemas
-from dsl_parser import utils
+from dsl_parser import (constants,
+                        functions,
+                        models,
+                        schemas,
+                        utils)
 from dsl_parser.interfaces import interfaces_parser
-from dsl_parser.exceptions import DSLParsingFormatException
-from dsl_parser.exceptions import DSLParsingLogicException
-from dsl_parser.utils import merge_schema_and_instance_properties
-from dsl_parser.utils import extract_complete_type_recursive
+from dsl_parser.exceptions import (DSLParsingFormatException,
+                                   DSLParsingLogicException)
 
 
 functions.register_entry_point_functions()
@@ -67,8 +65,7 @@ HOST_TYPE = 'cloudify.nodes.Compute'
 DEPENDS_ON_REL_TYPE = 'cloudify.relationships.depends_on'
 CONTAINED_IN_REL_TYPE = 'cloudify.relationships.contained_in'
 CONNECTED_TO_REL_TYPE = 'cloudify.relationships.connected_to'
-DEFAULT_WORKFLOWS_PLUGIN = 'default_workflows'
-OpDescriptor = namedtuple('OpDescriptor', [
+OpDescriptor = collections.namedtuple('OpDescriptor', [
     'plugin', 'op_struct', 'name'])
 
 
@@ -91,10 +88,10 @@ def parse_from_path(dsl_file_path, resources_base_url=None):
 
 def parse_from_url(dsl_url, resources_base_url=None):
     try:
-        with contextlib.closing(urlopen(dsl_url)) as f:
+        with contextlib.closing(urllib2.urlopen(dsl_url)) as f:
             dsl_string = f.read()
         return _parse(dsl_string, resources_base_url, dsl_url)
-    except HTTPError as e:
+    except urllib2.HTTPError as e:
         if e.code == 404:
             # HTTPError.__str__ uses the 'msg'.
             # by default it is set to 'Not Found' for 404 errors, which is not
@@ -125,7 +122,7 @@ def _dsl_location_to_url(dsl_location, resources_base_url):
 def _load_yaml(yaml_stream, error_message):
     try:
         parsed_dsl = yaml.safe_load(yaml_stream)
-    except ParserError, ex:
+    except yaml.parser.ParserError, ex:
         raise DSLParsingFormatException(-1, '{0}: Illegal yaml; {1}'
                                         .format(error_message, ex))
     if parsed_dsl is None:
@@ -565,7 +562,7 @@ def extract_complete_relationship_type(relationship_types,
             for operation_name, operation in interface.iteritems():
                 augment_operation(operation)
 
-    return extract_complete_type_recursive(
+    return utils.extract_complete_type_recursive(
         dsl_type_name=relationship_type_name,
         dsl_type=relationship_type,
         dsl_container=relationship_types,
@@ -587,7 +584,7 @@ def extract_complete_node_type(node_types,
             for operation_name, operation in interface.iteritems():
                 augment_operation(operation)
 
-    return extract_complete_type_recursive(
+    return utils.extract_complete_type_recursive(
         dsl_type_name=node_type_name,
         dsl_type=node_type,
         dsl_container=node_types,
@@ -852,7 +849,7 @@ def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
                     'policy "{0}" of group "{1}" references a non existent '
                     'policy type "{2}"'
                     .format(policy_name, group, policy['type']))
-            merged_properties = merge_schema_and_instance_properties(
+            merged_properties = utils.merge_schema_and_instance_properties(
                 policy.get(PROPERTIES, {}),
                 policy_types[policy['type']].get(PROPERTIES, {}),
                 '{0} \'{1}\' property is not part of '
@@ -874,7 +871,7 @@ def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
                         .format(trigger_name,
                                 policy_name,
                                 group, trigger['type']))
-                merged_parameters = merge_schema_and_instance_properties(
+                merged_parameters = utils.merge_schema_and_instance_properties(
                     trigger.get(PARAMETERS, {}),
                     policy_triggers[trigger['type']].get(PARAMETERS, {}),
                     '{0} \'{1}\' property is not part of '
@@ -935,7 +932,7 @@ def _process_node_relationships(node, node_name, node_names_set,
             target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
             complete_relationship[TARGET_INTERFACES] = target_interfaces
             complete_relationship[PROPERTIES] = \
-                merge_schema_and_instance_properties(
+                utils.merge_schema_and_instance_properties(
                     _get_dict_prop(relationship, PROPERTIES),
                     _get_dict_prop(relationship_complete_type, PROPERTIES),
                     '{0} node relationship \'{1}\' property is not part of '
@@ -1140,7 +1137,7 @@ def _extract_complete_node(node_type,
         interfaces_parser.merge_node_type_and_node_template_interfaces(
             node_type=complete_type,
             node_template=node),
-        PROPERTIES: merge_schema_and_instance_properties(
+        PROPERTIES: utils.merge_schema_and_instance_properties(
             _get_dict_prop(node, PROPERTIES),
             _get_dict_prop(complete_type, PROPERTIES),
             '{0} node \'{1}\' property is not part of the derived'
@@ -1203,10 +1200,10 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
             # (note that this check is only to verify nothing went wrong in
             # the meanwhile, as we've already read
             # from all imported files earlier)
-            with contextlib.closing(urlopen(single_import)) as f:
+            with contextlib.closing(urllib2.urlopen(single_import)) as f:
                 parsed_imported_dsl = _load_yaml(
                     f, 'Failed to parse import {0}'.format(single_import))
-        except URLError, ex:
+        except urllib2.URLError, ex:
             error = DSLParsingLogicException(
                 13, 'Failed on import - Unable to open import url {0}; {1}'
                     .format(single_import, ex.message))
@@ -1265,7 +1262,8 @@ def _get_resource_location(resource_name, resources_base_url,
 
     # Points to an existing file
     if os.path.exists(resource_name):
-        return 'file:{0}'.format(pathname2url(os.path.abspath(resource_name)))
+        return 'file:{0}'.format(
+            urllib.pathname2url(os.path.abspath(resource_name)))
 
     if current_resource_context:
         candidate_url = current_resource_context[
@@ -1279,9 +1277,9 @@ def _get_resource_location(resource_name, resources_base_url,
 
 def _validate_url_exists(url):
     try:
-        with contextlib.closing(urlopen(url)):
+        with contextlib.closing(urllib2.urlopen(url)):
             return True
-    except URLError:
+    except urllib2.URLError:
         return False
 
 
@@ -1307,13 +1305,13 @@ def _build_ordered_imports_list(parsed_dsl, ordered_imports_list,
                 raise ex
             if import_url not in ordered_imports_list:
                 try:
-                    with contextlib.closing(urlopen(import_url)) as f:
+                    with contextlib.closing(urllib2.urlopen(import_url)) as f:
                         imported_dsl = _load_yaml(
                             f, 'Failed to parse import {0} (via {1})'
                                .format(another_import, import_url))
                     _build_ordered_imports_list_recursive(imported_dsl,
                                                           import_url)
-                except URLError, ex:
+                except urllib2.URLError, ex:
                     ex = DSLParsingLogicException(
                         13, 'Failed on import - Unable to open import url '
                             '{0}; {1}'.format(import_url, ex.message))
@@ -1325,8 +1323,8 @@ def _build_ordered_imports_list(parsed_dsl, ordered_imports_list,
 
 def _validate_dsl_schema(parsed_dsl):
     try:
-        validate(parsed_dsl, schemas.DSL_SCHEMA)
-    except ValidationError, ex:
+        jsonschema.validate(parsed_dsl, schemas.DSL_SCHEMA)
+    except jsonschema.ValidationError, ex:
         raise DSLParsingFormatException(
             1, '{0}; Path to error: {1}'
                .format(ex.message, '.'.join((str(x) for x in ex.path))))
@@ -1338,8 +1336,8 @@ def _validate_imports_section(imports_section, dsl_location):
     # while the standard validation runs only after combining all imports
     # together
     try:
-        validate(imports_section, schemas.IMPORTS_SCHEMA)
-    except ValidationError, ex:
+        jsonschema.validate(imports_section, schemas.IMPORTS_SCHEMA)
+    except jsonschema.ValidationError, ex:
         raise DSLParsingFormatException(
             2, 'Improper "imports" section in yaml {0}; {1}; Path to error: '
                '{2}'.format(dsl_location, ex.message,
@@ -1434,8 +1432,8 @@ def parse_dsl_version(dsl_version):
                                                    DSL_VERSION_1_0))
 
     version_parts = short_dsl_version.split('_')
-    version_details = namedtuple('version_details',
-                                 ['major', 'minor', 'micro'])
+    version_details = collections.namedtuple('version_details',
+                                             ['major', 'minor', 'micro'])
     major = version_parts[0]
     minor = version_parts[1]
     micro = None
