@@ -23,6 +23,7 @@ from dsl_parser.interfaces.constants import NO_OP
 from dsl_parser.tests.abstract_test_parser import AbstractTestParser
 from dsl_parser.parser import TYPE_HIERARCHY, parse_from_path, parse_from_url
 from dsl_parser.parser import parse as dsl_parse
+from dsl_parser import parser as dsl_parser
 from dsl_parser import models
 from dsl_parser.interfaces.utils import operation_mapping
 
@@ -3357,6 +3358,37 @@ node_templates:
                   expected=(1, 0))
         assertion(self.BASIC_VERSION_SECTION_DSL_1_1,
                   expected=(1, 1))
+
+    def test_version_comparison(self):
+        v1_0 = dsl_parser.parse_dsl_version('cloudify_dsl_1_0')
+        v1_0_0 = dsl_parser.parse_dsl_version('cloudify_dsl_1_0_0')
+        v1_0_1 = dsl_parser.parse_dsl_version('cloudify_dsl_1_0_1')
+        v1_1 = dsl_parser.parse_dsl_version('cloudify_dsl_1_1')
+        v2_0 = dsl_parser.parse_dsl_version('cloudify_dsl_2_0')
+
+        def assert_greater_than_equal(left, right):
+            self.assertTrue(dsl_parser.is_version_equal_or_greater_than(
+                left, right))
+
+        assert_greater_than_equal(v2_0, v2_0)
+        assert_greater_than_equal(v2_0, v1_1)
+        assert_greater_than_equal(v2_0, v1_0_1)
+        assert_greater_than_equal(v2_0, v1_0_0)
+        assert_greater_than_equal(v2_0, v1_0)
+
+        assert_greater_than_equal(v1_1, v1_1)
+        assert_greater_than_equal(v1_1, v1_0_1)
+        assert_greater_than_equal(v1_1, v1_0_0)
+        assert_greater_than_equal(v1_1, v1_0)
+
+        assert_greater_than_equal(v1_0_1, v1_0_1)
+        assert_greater_than_equal(v1_0_1, v1_0_0)
+        assert_greater_than_equal(v1_0_1, v1_0)
+
+        assert_greater_than_equal(v1_0_0, v1_0_0)
+        assert_greater_than_equal(v1_0_0, v1_0)
+        assert_greater_than_equal(v1_0, v1_0)
+        assert_greater_than_equal(v1_0, v1_0_0)
 
 
 class DeploymentPluginsToInstallTest(AbstractTestParser):
