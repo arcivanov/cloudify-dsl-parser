@@ -93,8 +93,6 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     try:
         parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
 
-        # not sure about the name. this will actually be the dsl_location
-        # minus the /blueprint.yaml at the end of it
         resource_base = None
         if dsl_location:
             dsl_location = _dsl_location_to_url(dsl_location,
@@ -218,7 +216,7 @@ def _post_process_nodes(processed_nodes,
 
     for node in processed_nodes:
         # fix plugins for all nodes
-        node[PLUGINS] = get_plugins_from_operations(node, plugins)
+        node[PLUGINS] = _get_plugins_from_operations(node, plugins)
 
     # set plugins_to_install property for nodes
     for node in processed_nodes:
@@ -465,8 +463,8 @@ def _is_derived_from(type_name, types, derived_from):
     return False
 
 
-def relationship_type_merging_function(overridden_relationship_type,
-                                       overriding_relationship_type):
+def _relationship_type_merging_function(overridden_relationship_type,
+                                        overriding_relationship_type):
 
     merged_type = overriding_relationship_type
 
@@ -488,8 +486,8 @@ def relationship_type_merging_function(overridden_relationship_type,
     return merged_type
 
 
-def node_type_interfaces_merging_function(overridden_node_type,
-                                          overriding_node_type):
+def _node_type_interfaces_merging_function(overridden_node_type,
+                                           overriding_node_type):
 
     merged_type = overriding_node_type
 
@@ -519,24 +517,24 @@ def extract_complete_relationship_type(relationship_types,
         source_interfaces = relationship_type.get('source_interfaces', {})
         for interface_name, interface in source_interfaces.iteritems():
             for operation_name, operation in interface.iteritems():
-                augment_operation(operation)
+                _augment_operation(operation)
         target_interfaces = relationship_type.get('target_interfaces', {})
         for interface_name, interface in target_interfaces.iteritems():
             for operation_name, operation in interface.iteritems():
-                augment_operation(operation)
+                _augment_operation(operation)
 
     return utils.extract_complete_type_recursive(
         dsl_type_name=relationship_type_name,
         dsl_type=relationship_type,
         dsl_container=relationship_types,
         is_relationships=True,
-        merging_func=relationship_type_merging_function
+        merging_func=_relationship_type_merging_function
     )
 
 
-def extract_complete_node_type(node_types,
-                               node_type_name,
-                               node_type):
+def _extract_complete_node_type(node_types,
+                                node_type_name,
+                                node_type):
 
     if 'derived_from' not in node_type:
         # top level types do not undergo merge properly,
@@ -545,18 +543,18 @@ def extract_complete_node_type(node_types,
         interfaces = node_type.get('interfaces', {})
         for interface_name, interface in interfaces.iteritems():
             for operation_name, operation in interface.iteritems():
-                augment_operation(operation)
+                _augment_operation(operation)
 
     return utils.extract_complete_type_recursive(
         dsl_type_name=node_type_name,
         dsl_type=node_type,
         dsl_container=node_types,
         is_relationships=False,
-        merging_func=node_type_interfaces_merging_function
+        merging_func=_node_type_interfaces_merging_function
     )
 
 
-def augment_operation(operation):
+def _augment_operation(operation):
     if isinstance(operation, str):
         operation = {
             'implementation': operation
@@ -1078,7 +1076,7 @@ def _extract_complete_node(node_type,
                            node_name,
                            node):
 
-    complete_type = extract_complete_node_type(
+    complete_type = _extract_complete_node_type(
         node_type=node_type,
         node_types=node_types,
         node_type_name=node_type_name
@@ -1240,7 +1238,7 @@ def _dsl_location_to_url(dsl_location, resources_base_url):
 
 def _load_yaml(yaml_stream, error_message):
     try:
-        # empty string returns None so we convert it to an empty dict
+        # load of empty string returns None so we convert it to an empty dict
         return yaml.safe_load(yaml_stream) or {}
     except yaml.parser.ParserError, ex:
         raise DSLParsingFormatException(-1, '{0}: Illegal yaml; {1}'
@@ -1317,11 +1315,11 @@ def _validate_imports_section(imports_section, dsl_location):
                             '.'.join((str(x) for x in ex.path))))
 
 
-def get_plugins_from_operations(node, processed_plugins):
+def _get_plugins_from_operations(node, processed_plugins):
     added_plugins = set()
     plugins = []
     node_operations = node.get('operations', {})
-    plugins_from_operations = _get_plugins_from_operations(
+    plugins_from_operations = _get_plugins_from_operations_helper(
         node_operations, processed_plugins)
     _add_plugins(plugins, plugins_from_operations, added_plugins)
     plugins_from_node = node.get('plugins', {}).values()
@@ -1342,7 +1340,7 @@ def _add_plugins(plugins, new_plugins, added_plugins):
             added_plugins.add(plugin_key)
 
 
-def _get_plugins_from_operations(operations, processed_plugins):
+def _get_plugins_from_operations_helper(operations, processed_plugins):
     plugins = []
     for operation in operations.values():
         real_executor = _set_operation_executor(
