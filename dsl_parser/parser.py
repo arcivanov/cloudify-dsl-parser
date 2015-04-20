@@ -61,7 +61,16 @@ CONNECTED_TO_REL_TYPE = 'cloudify.relationships.connected_to'
 OpDescriptor = collections.namedtuple('OpDescriptor', [
     'plugin', 'op_struct', 'name'])
 
-parse_context = models.ParseContext()
+
+class ParseContext(dict):
+    @property
+    def version(self):
+        return self['version']
+
+    @version.setter
+    def version(self, value):
+        self['version'] = value
+parse_context = ParseContext()
 
 
 def parse_from_path(dsl_file_path, resources_base_url=None):
@@ -182,6 +191,142 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
         parse_context.clear()
 
 
+def _process_relationships(combined_parsed_dsl, resource_base):
+    processed_relationships = {}
+    if RELATIONSHIPS not in combined_parsed_dsl:
+        return processed_relationships
+
+    relationship_types = combined_parsed_dsl[RELATIONSHIPS]
+
+    for relationship_type_name, relationship_type in \
+            relationship_types.iteritems():
+        complete_relationship = _extract_complete_relationship_type(
+            relationship_type=relationship_type,
+            relationship_type_name=relationship_type_name,
+            relationship_types=relationship_types
+        )
+
+        plugins = combined_parsed_dsl.get(PLUGINS, {})
+        _validate_relationship_fields(relationship_type, plugins,
+                                      relationship_type_name,
+                                      resource_base)
+        complete_rel_obj_copy = copy.deepcopy(complete_relationship)
+        processed_relationships[relationship_type_name] = \
+            complete_rel_obj_copy
+        processed_relationships[relationship_type_name]['name'] = \
+            relationship_type_name
+    return processed_relationships
+
+
+def _process_plugin(plugin, plugin_name, dsl_version):
+    if plugin[constants.PLUGIN_EXECUTOR_KEY] not \
+            in [constants.CENTRAL_DEPLOYMENT_AGENT,
+                constants.HOST_AGENT]:
+        raise DSLParsingLogicException(
+            18, 'plugin {0} has an illegal '
+                '{1} value {2}; value '
+                'must be either {3} or {4}'
+                .format(plugin_name,
+                        constants.PLUGIN_EXECUTOR_KEY,
+                        plugin[constants.PLUGIN_EXECUTOR_KEY],
+                        constants.CENTRAL_DEPLOYMENT_AGENT,
+                        constants.HOST_AGENT))
+
+    plugin_source = plugin.get(constants.PLUGIN_SOURCE_KEY, None)
+    plugin_install = plugin.get(constants.PLUGIN_INSTALL_KEY, True)
+    plugin_install_arguments = None
+
+    # if 'install_arguments' are set - verify dsl version is at least 1_1
+    if constants.PLUGIN_INSTALL_ARGUMENTS_KEY in plugin:
+        if version.is_version_equal_or_greater_than(
+                version.parse_dsl_version(dsl_version),
+                version.parse_dsl_version(version.DSL_VERSION_1_1)):
+            plugin_install_arguments = \
+                plugin[constants.PLUGIN_INSTALL_ARGUMENTS_KEY]
+        else:
+            raise DSLParsingLogicException(
+                70,
+                'plugin property "{0}" is not supported for {1} earlier than '
+                '"{2}". You are currently using version "{3}"'.format(
+                    constants.PLUGIN_INSTALL_ARGUMENTS_KEY, version.VERSION,
+                    version.DSL_VERSION_1_1, dsl_version))
+
+    if plugin_install and not plugin_source:
+        raise DSLParsingLogicException(
+            50,
+            "plugin {0} needs to be installed, "
+            "but does not declare a {1} property"
+            .format(plugin_name, constants.PLUGIN_SOURCE_KEY)
+        )
+
+    processed_plugin = copy.deepcopy(plugin)
+
+    # augment plugin dictionary
+    processed_plugin[constants.PLUGIN_NAME_KEY] = plugin_name
+    processed_plugin[constants.PLUGIN_INSTALL_KEY] = plugin_install
+    processed_plugin[constants.PLUGIN_SOURCE_KEY] = plugin_source
+    processed_plugin[constants.PLUGIN_INSTALL_ARGUMENTS_KEY] = \
+        plugin_install_arguments
+
+    return processed_plugin
+
+
+def _process_node(node_name,
+                  node,
+                  parsed_dsl,
+                  top_level_relationships,
+                  node_names_set,
+                  plugins,
+                  resource_base):
+    declared_node_type_name = node['type']
+    node_type_name = declared_node_type_name
+    processed_node = {'name': node_name,
+                      'id': node_name,
+                      'declared_type': declared_node_type_name}
+
+    # handle types
+    if NODE_TYPES not in parsed_dsl or declared_node_type_name not in \
+            parsed_dsl[NODE_TYPES]:
+        err_message = 'Could not locate node type: {0}; existing types: {1}' \
+            .format(declared_node_type_name,
+                    parsed_dsl[NODE_TYPES].keys() if
+                    NODE_TYPES in parsed_dsl else 'None')
+        raise DSLParsingLogicException(7, err_message)
+
+    processed_node['type'] = node_type_name
+
+    node_type = parsed_dsl[NODE_TYPES][node_type_name]
+    complete_node_type = _extract_complete_node(node_type,
+                                                node_type_name,
+                                                parsed_dsl[NODE_TYPES],
+                                                node_name,
+                                                node)
+    processed_node[PROPERTIES] = complete_node_type[PROPERTIES]
+    processed_node[PLUGINS] = {}
+    # handle plugins and operations
+    if INTERFACES in complete_node_type:
+        partial_error_message = 'in node {0} of type {1}' \
+            .format(processed_node['id'], processed_node['type'])
+        operations = _process_context_operations(
+            partial_error_message,
+            complete_node_type[INTERFACES],
+            plugins,
+            processed_node, 10, resource_base)
+
+        processed_node['operations'] = operations
+
+    # handle relationships
+    _process_node_relationships(node, node_name, node_names_set,
+                                processed_node, top_level_relationships)
+
+    processed_node[PROPERTIES]['cloudify_runtime'] = {}
+
+    processed_node['instances'] = node['instances'] \
+        if 'instances' in node else {'deploy': 1}
+
+    return processed_node
+
+
 def _post_process_nodes(processed_nodes,
                         types,
                         relationships,
@@ -249,6 +394,35 @@ def _post_process_nodes(processed_nodes,
     _validate_agent_plugins_on_host_nodes(processed_nodes)
 
 
+def _process_workflows(workflows, plugins, resource_base):
+    processed_workflows = {}
+    plugin_names = plugins.keys()
+    for name, mapping in workflows.items():
+        op_descriptor = \
+            _extract_plugin_name_and_operation_mapping_from_operation(
+                plugins=plugins,
+                plugin_names=plugin_names,
+                operation_name=name,
+                operation_content=mapping,
+                error_code=21,
+                partial_error_message='',
+                resource_base=resource_base,
+                is_workflows=True)
+        processed_workflows[name] = op_descriptor.op_struct
+    return processed_workflows
+
+
+def _create_plan_workflow_plugins(workflows, plugins):
+    workflow_plugins = []
+    workflow_plugin_names = set()
+    for workflow, op_struct in workflows.items():
+        if op_struct['plugin'] not in workflow_plugin_names:
+            plugin_name = op_struct['plugin']
+            workflow_plugins.append(plugins[plugin_name])
+            workflow_plugin_names.add(plugin_name)
+    return workflow_plugins
+
+
 def _create_plan_deployment_plugins(processed_nodes):
     deployment_plugins = []
     deployment_plugin_names = set()
@@ -264,15 +438,71 @@ def _create_plan_deployment_plugins(processed_nodes):
     return deployment_plugins
 
 
-def _create_plan_workflow_plugins(workflows, plugins):
-    workflow_plugins = []
-    workflow_plugin_names = set()
-    for workflow, op_struct in workflows.items():
-        if op_struct['plugin'] not in workflow_plugin_names:
-            plugin_name = op_struct['plugin']
-            workflow_plugins.append(plugins[plugin_name])
-            workflow_plugin_names.add(plugin_name)
-    return workflow_plugins
+def _process_policy_types(policy_types):
+    processed = copy.deepcopy(policy_types)
+    for policy in processed.values():
+        policy[PROPERTIES] = policy.get(PROPERTIES, {})
+    return processed
+
+
+def _process_policy_triggers(policy_triggers):
+    processed = copy.deepcopy(policy_triggers)
+    for trigger in processed.values():
+        trigger[PARAMETERS] = trigger.get(PARAMETERS, {})
+    return processed
+
+
+def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
+    node_names = set(n['name'] for n in processed_nodes)
+    processed_groups = copy.deepcopy(groups)
+    for group_name, group in processed_groups.items():
+        for member in group['members']:
+            if member not in node_names:
+                raise DSLParsingLogicException(
+                    40,
+                    'member "{0}" of group "{1}" does not '
+                    'match any defined node'.format(member, groups))
+        for policy_name, policy in group['policies'].items():
+            if policy['type'] not in policy_types:
+                raise DSLParsingLogicException(
+                    41,
+                    'policy "{0}" of group "{1}" references a non existent '
+                    'policy type "{2}"'
+                    .format(policy_name, group, policy['type']))
+            merged_properties = utils.merge_schema_and_instance_properties(
+                policy.get(PROPERTIES, {}),
+                policy_types[policy['type']].get(PROPERTIES, {}),
+                '{0} \'{1}\' property is not part of '
+                'the policy type properties schema',
+                '{0} does not provide a value for mandatory '
+                '\'{1}\' property which is '
+                'part of its policy type schema',
+                node_name='group "{0}", policy "{1}"'.format(group_name,
+                                                             policy_name))
+            policy[PROPERTIES] = merged_properties
+            policy['triggers'] = policy.get('triggers', {})
+            for trigger_name, trigger in policy['triggers'].items():
+                if trigger['type'] not in policy_triggers:
+                    raise DSLParsingLogicException(
+                        42,
+                        'trigger "{0}" of policy "{1}" of group "{2}" '
+                        'references a non existent '
+                        'policy trigger "{3}"'
+                        .format(trigger_name,
+                                policy_name,
+                                group, trigger['type']))
+                merged_parameters = utils.merge_schema_and_instance_properties(
+                    trigger.get(PARAMETERS, {}),
+                    policy_triggers[trigger['type']].get(PARAMETERS, {}),
+                    '{0} \'{1}\' property is not part of '
+                    'the policy type properties schema',
+                    '{0} does not provide a value for mandatory '
+                    '\'{1}\' property which is '
+                    'part of its policy type schema',
+                    node_name='group "{0}", policy "{1}" trigger "{2}"'
+                              .format(group_name, policy_name, trigger_name))
+                trigger[PARAMETERS] = merged_parameters
+    return processed_groups
 
 
 def _create_type_hierarchy(type_name, types):
@@ -571,33 +801,6 @@ def _augment_operation(operation):
         operation['retry_interval'] = None
 
 
-def _process_relationships(combined_parsed_dsl, resource_base):
-    processed_relationships = {}
-    if RELATIONSHIPS not in combined_parsed_dsl:
-        return processed_relationships
-
-    relationship_types = combined_parsed_dsl[RELATIONSHIPS]
-
-    for relationship_type_name, relationship_type in \
-            relationship_types.iteritems():
-        complete_relationship = _extract_complete_relationship_type(
-            relationship_type=relationship_type,
-            relationship_type_name=relationship_type_name,
-            relationship_types=relationship_types
-        )
-
-        plugins = combined_parsed_dsl.get(PLUGINS, {})
-        _validate_relationship_fields(relationship_type, plugins,
-                                      relationship_type_name,
-                                      resource_base)
-        complete_rel_obj_copy = copy.deepcopy(complete_relationship)
-        processed_relationships[relationship_type_name] = \
-            complete_rel_obj_copy
-        processed_relationships[relationship_type_name]['name'] = \
-            relationship_type_name
-    return processed_relationships
-
-
 def _extract_plugin_name_and_operation_mapping_from_operation(
         plugins,
         plugin_names,
@@ -762,91 +965,6 @@ def _resource_exists(resource_base, resource_name):
     return _validate_url_exists('{0}/{1}'.format(resource_base, resource_name))
 
 
-def _process_workflows(workflows, plugins, resource_base):
-    processed_workflows = {}
-    plugin_names = plugins.keys()
-    for name, mapping in workflows.items():
-        op_descriptor = \
-            _extract_plugin_name_and_operation_mapping_from_operation(
-                plugins=plugins,
-                plugin_names=plugin_names,
-                operation_name=name,
-                operation_content=mapping,
-                error_code=21,
-                partial_error_message='',
-                resource_base=resource_base,
-                is_workflows=True)
-        processed_workflows[name] = op_descriptor.op_struct
-    return processed_workflows
-
-
-def _process_policy_types(policy_types):
-    processed = copy.deepcopy(policy_types)
-    for policy in processed.values():
-        policy[PROPERTIES] = policy.get(PROPERTIES, {})
-    return processed
-
-
-def _process_policy_triggers(policy_triggers):
-    processed = copy.deepcopy(policy_triggers)
-    for trigger in processed.values():
-        trigger[PARAMETERS] = trigger.get(PARAMETERS, {})
-    return processed
-
-
-def _process_groups(groups, policy_types, policy_triggers, processed_nodes):
-    node_names = set(n['name'] for n in processed_nodes)
-    processed_groups = copy.deepcopy(groups)
-    for group_name, group in processed_groups.items():
-        for member in group['members']:
-            if member not in node_names:
-                raise DSLParsingLogicException(
-                    40,
-                    'member "{0}" of group "{1}" does not '
-                    'match any defined node'.format(member, groups))
-        for policy_name, policy in group['policies'].items():
-            if policy['type'] not in policy_types:
-                raise DSLParsingLogicException(
-                    41,
-                    'policy "{0}" of group "{1}" references a non existent '
-                    'policy type "{2}"'
-                    .format(policy_name, group, policy['type']))
-            merged_properties = utils.merge_schema_and_instance_properties(
-                policy.get(PROPERTIES, {}),
-                policy_types[policy['type']].get(PROPERTIES, {}),
-                '{0} \'{1}\' property is not part of '
-                'the policy type properties schema',
-                '{0} does not provide a value for mandatory '
-                '\'{1}\' property which is '
-                'part of its policy type schema',
-                node_name='group "{0}", policy "{1}"'.format(group_name,
-                                                             policy_name))
-            policy[PROPERTIES] = merged_properties
-            policy['triggers'] = policy.get('triggers', {})
-            for trigger_name, trigger in policy['triggers'].items():
-                if trigger['type'] not in policy_triggers:
-                    raise DSLParsingLogicException(
-                        42,
-                        'trigger "{0}" of policy "{1}" of group "{2}" '
-                        'references a non existent '
-                        'policy trigger "{3}"'
-                        .format(trigger_name,
-                                policy_name,
-                                group, trigger['type']))
-                merged_parameters = utils.merge_schema_and_instance_properties(
-                    trigger.get(PARAMETERS, {}),
-                    policy_triggers[trigger['type']].get(PARAMETERS, {}),
-                    '{0} \'{1}\' property is not part of '
-                    'the policy type properties schema',
-                    '{0} does not provide a value for mandatory '
-                    '\'{1}\' property which is '
-                    'part of its policy type schema',
-                    node_name='group "{0}", policy "{1}" trigger "{2}"'
-                              .format(group_name, policy_name, trigger_name))
-                trigger[PARAMETERS] = merged_parameters
-    return processed_groups
-
-
 def _process_node_relationships(node,
                                 node_name,
                                 node_names_set,
@@ -944,62 +1062,6 @@ def _workflow_operation_struct(plugin_name,
     }
 
 
-def _process_node(node_name,
-                  node,
-                  parsed_dsl,
-                  top_level_relationships,
-                  node_names_set,
-                  plugins,
-                  resource_base):
-    declared_node_type_name = node['type']
-    node_type_name = declared_node_type_name
-    processed_node = {'name': node_name,
-                      'id': node_name,
-                      'declared_type': declared_node_type_name}
-
-    # handle types
-    if NODE_TYPES not in parsed_dsl or declared_node_type_name not in \
-            parsed_dsl[NODE_TYPES]:
-        err_message = 'Could not locate node type: {0}; existing types: {1}'\
-                      .format(declared_node_type_name,
-                              parsed_dsl[NODE_TYPES].keys() if
-                              NODE_TYPES in parsed_dsl else 'None')
-        raise DSLParsingLogicException(7, err_message)
-
-    processed_node['type'] = node_type_name
-
-    node_type = parsed_dsl[NODE_TYPES][node_type_name]
-    complete_node_type = _extract_complete_node(node_type,
-                                                node_type_name,
-                                                parsed_dsl[NODE_TYPES],
-                                                node_name,
-                                                node)
-    processed_node[PROPERTIES] = complete_node_type[PROPERTIES]
-    processed_node[PLUGINS] = {}
-    # handle plugins and operations
-    if INTERFACES in complete_node_type:
-        partial_error_message = 'in node {0} of type {1}'\
-            .format(processed_node['id'], processed_node['type'])
-        operations = _process_context_operations(
-            partial_error_message,
-            complete_node_type[INTERFACES],
-            plugins,
-            processed_node, 10, resource_base)
-
-        processed_node['operations'] = operations
-
-    # handle relationships
-    _process_node_relationships(node, node_name, node_names_set,
-                                processed_node, top_level_relationships)
-
-    processed_node[PROPERTIES]['cloudify_runtime'] = {}
-
-    processed_node['instances'] = node['instances'] \
-        if 'instances' in node else {'deploy': 1}
-
-    return processed_node
-
-
 def _extract_node_host_id(processed_node,
                           node_name_to_node,
                           host_types,
@@ -1015,59 +1077,6 @@ def _extract_node_host_id(processed_node,
                         node_name_to_node,
                         host_types,
                         contained_in_rel_types)
-
-
-def _process_plugin(plugin, plugin_name, dsl_version):
-    if plugin[constants.PLUGIN_EXECUTOR_KEY] not \
-            in [constants.CENTRAL_DEPLOYMENT_AGENT,
-                constants.HOST_AGENT]:
-        raise DSLParsingLogicException(
-            18, 'plugin {0} has an illegal '
-                '{1} value {2}; value '
-                'must be either {3} or {4}'
-            .format(plugin_name,
-                    constants.PLUGIN_EXECUTOR_KEY,
-                    plugin[constants.PLUGIN_EXECUTOR_KEY],
-                    constants.CENTRAL_DEPLOYMENT_AGENT,
-                    constants.HOST_AGENT))
-
-    plugin_source = plugin.get(constants.PLUGIN_SOURCE_KEY, None)
-    plugin_install = plugin.get(constants.PLUGIN_INSTALL_KEY, True)
-    plugin_install_arguments = None
-
-    # if 'install_arguments' are set - verify dsl version is at least 1_1
-    if constants.PLUGIN_INSTALL_ARGUMENTS_KEY in plugin:
-        if version.is_version_equal_or_greater_than(
-                version.parse_dsl_version(dsl_version),
-                version.parse_dsl_version(version.DSL_VERSION_1_1)):
-            plugin_install_arguments = \
-                plugin[constants.PLUGIN_INSTALL_ARGUMENTS_KEY]
-        else:
-            raise DSLParsingLogicException(
-                70,
-                'plugin property "{0}" is not supported for {1} earlier than '
-                '"{2}". You are currently using version "{3}"'.format(
-                    constants.PLUGIN_INSTALL_ARGUMENTS_KEY, version.VERSION,
-                    version.DSL_VERSION_1_1, dsl_version))
-
-    if plugin_install and not plugin_source:
-        raise DSLParsingLogicException(
-            50,
-            "plugin {0} needs to be installed, "
-            "but does not declare a {1} property"
-            .format(plugin_name, constants.PLUGIN_SOURCE_KEY)
-        )
-
-    processed_plugin = copy.deepcopy(plugin)
-
-    # augment plugin dictionary
-    processed_plugin[constants.PLUGIN_NAME_KEY] = plugin_name
-    processed_plugin[constants.PLUGIN_INSTALL_KEY] = plugin_install
-    processed_plugin[constants.PLUGIN_SOURCE_KEY] = plugin_source
-    processed_plugin[constants.PLUGIN_INSTALL_ARGUMENTS_KEY] = \
-        plugin_install_arguments
-
-    return processed_plugin
 
 
 def _extract_complete_node(node_type,
