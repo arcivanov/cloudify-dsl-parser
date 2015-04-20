@@ -174,7 +174,7 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
             OUTPUTS: outputs,
             constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
             constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
-            version.VERSION: version.process_dsl_version(dsl_version)
+            'version': version.process_dsl_version(dsl_version)
         })
 
         functions.validate_functions(plan)
