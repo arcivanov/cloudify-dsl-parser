@@ -506,9 +506,9 @@ def _node_type_interfaces_merging_function(overridden_node_type,
     return merged_type
 
 
-def extract_complete_relationship_type(relationship_types,
-                                       relationship_type_name,
-                                       relationship_type):
+def _extract_complete_relationship_type(relationship_types,
+                                        relationship_type_name,
+                                        relationship_type):
 
     if 'derived_from' not in relationship_type:
         # top level types do not undergo merge properly,
@@ -580,7 +580,7 @@ def _process_relationships(combined_parsed_dsl, resource_base):
 
     for relationship_type_name, relationship_type in \
             relationship_types.iteritems():
-        complete_relationship = extract_complete_relationship_type(
+        complete_relationship = _extract_complete_relationship_type(
             relationship_type=relationship_type,
             relationship_type_name=relationship_type_name,
             relationship_types=relationship_types
