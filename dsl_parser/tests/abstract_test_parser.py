@@ -25,8 +25,8 @@ import testtools
 
 from dsl_parser.exceptions import DSLParsingException
 from dsl_parser.parser import parse as dsl_parse
-from dsl_parser.parser import parse_from_path as dsl_parse_from_path, \
-    DSL_VERSION_PREFIX
+from dsl_parser.parser import parse_from_path as dsl_parse_from_path
+from dsl_parser.version import DSL_VERSION_PREFIX
 
 
 def timeout(seconds=10):

@@ -52,3 +52,13 @@ class Plan(dict):
     @property
     def node_templates(self):
         return self['nodes']
+
+
+class ParseContext(dict):
+    @property
+    def version(self):
+        return self['version']
+
+    @version.setter
+    def version(self, value):
+        self['version'] = value

@@ -15,11 +15,10 @@
 
 
 from dsl_parser import constants
-from dsl_parser.parser import DSLParsingLogicException, parse_from_path, \
-    parse_dsl_version
+from dsl_parser.parser import DSLParsingLogicException, parse_from_path
 from dsl_parser.parser import parse as dsl_parse
+from dsl_parser import version
 from dsl_parser.tests.abstract_test_parser import AbstractTestParser
-from dsl_parser.parser import DSL_VERSION_1_0, DSL_VERSION_1_1
 
 
 class TestParserLogicExceptions(AbstractTestParser):
@@ -652,7 +651,8 @@ node_templates:
                            ' than "{1}". You are currently using' \
                            ' version "{2}"' \
             .format(constants.PLUGIN_INSTALL_ARGUMENTS_KEY,
-                    DSL_VERSION_1_1, DSL_VERSION_1_0)
+                    version.DSL_VERSION_1_1,
+                    version.DSL_VERSION_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
                                expected_err_msg, self.parse, yaml,
                                dsl_version=self.BASIC_VERSION_SECTION_DSL_1_0)
@@ -660,52 +660,60 @@ node_templates:
     def test_parse_empty_or_none_dsl_version(self):
         expected_err_msg = 'tosca_definitions_version is missing or empty'
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version, '')
+                               expected_err_msg,
+                               version.parse_dsl_version, '')
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version, None)
+                               expected_err_msg,
+                               version.parse_dsl_version, None)
 
     def test_parse_not_string_dsl_version(self):
         expected_err_msg = 'Invalid tosca_definitions_version: \[1\] is not' \
                            ' a string'
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version, [1])
+                               expected_err_msg,
+                               version.parse_dsl_version, [1])
 
     def test_parse_wrong_dsl_version_format(self):
         expected_err_msg = 'Invalid tosca_definitions_version: "{0}", ' \
                            'expected a value following this format: "{1}"'\
-            .format('1_0', DSL_VERSION_1_0)
+            .format('1_0', version.DSL_VERSION_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version, '1_0')
+                               expected_err_msg,
+                               version.parse_dsl_version, '1_0')
 
         expected_err_msg = 'Invalid tosca_definitions_version: "{0}", ' \
                            'expected a value following this format: "{1}"' \
-            .format('cloudify_dsl_1.0', DSL_VERSION_1_0)
+            .format('cloudify_dsl_1.0', version.DSL_VERSION_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version,
+                               expected_err_msg,
+                               version.parse_dsl_version,
                                'cloudify_dsl_1.0')
 
         expected_err_msg = 'Invalid tosca_definitions_version: "{0}", ' \
                            'major version is "a" while expected to be a' \
                            ' number' \
-            .format('cloudify_dsl_a_0', DSL_VERSION_1_0)
+            .format('cloudify_dsl_a_0', version.DSL_VERSION_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version,
+                               expected_err_msg,
+                               version.parse_dsl_version,
                                'cloudify_dsl_a_0')
 
         expected_err_msg = 'Invalid tosca_definitions_version: "{0}", ' \
                            'minor version is "a" while expected to be a' \
                            ' number' \
-            .format('cloudify_dsl_1_a', DSL_VERSION_1_0)
+            .format('cloudify_dsl_1_a', version.DSL_VERSION_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version,
+                               expected_err_msg,
+                               version.parse_dsl_version,
                                'cloudify_dsl_1_a')
 
         expected_err_msg = 'Invalid tosca_definitions_version: "{0}", ' \
                            'micro version is "a" while expected to be a' \
                            ' number' \
-            .format('cloudify_dsl_1_1_a', DSL_VERSION_1_0)
+            .format('cloudify_dsl_1_1_a', version.DSL_VERSION_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg, parse_dsl_version,
+                               expected_err_msg,
+                               version.parse_dsl_version,
                                'cloudify_dsl_1_1_a')
 
     def test_max_retries_version_validation(self):
