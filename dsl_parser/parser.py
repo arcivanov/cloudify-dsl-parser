@@ -36,9 +36,6 @@ from dsl_parser.exceptions import (DSLParsingFormatException,
                                    DSLParsingLogicException)
 
 
-functions.register_entry_point_functions()
-
-VERSION = 'tosca_definitions_version'
 NODE_TEMPLATES = 'node_templates'
 IMPORTS = 'imports'
 NODE_TYPES = 'node_types'
@@ -158,7 +155,7 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
 
         _validate_dsl_schema(combined_parsed_dsl)
 
-        dsl_version = combined_parsed_dsl[VERSION]
+        dsl_version = combined_parsed_dsl[version.VERSION]
         version.validate_dsl_version(dsl_version)
         parsed_dsl_version = version.parse_dsl_version(dsl_version)
         parse_context.version = parsed_dsl_version
@@ -1075,7 +1072,7 @@ def _process_plugin(plugin, plugin_name, dsl_version):
                 70,
                 'plugin property "{0}" is not supported for {1} earlier than '
                 '"{2}". You are currently using version "{3}"'.format(
-                    constants.PLUGIN_INSTALL_ARGUMENTS_KEY, VERSION,
+                    constants.PLUGIN_INSTALL_ARGUMENTS_KEY, version.VERSION,
                     version.DSL_VERSION_1_1, dsl_version))
 
     if plugin_install and not plugin_source:
@@ -1151,15 +1148,15 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
 
     combined_parsed_dsl = copy.deepcopy(parsed_dsl)
 
-    if VERSION not in parsed_dsl:
+    if version.VERSION not in parsed_dsl:
         raise DSLParsingLogicException(
             27, '{0} field must appear in the main blueprint file'.format(
-                VERSION))
+                version.VERSION))
 
     if IMPORTS not in parsed_dsl:
         return combined_parsed_dsl
 
-    dsl_version = parsed_dsl[VERSION]
+    dsl_version = parsed_dsl[version.VERSION]
     _validate_imports_section(parsed_dsl[IMPORTS], dsl_location)
 
     ordered_imports_list = []
@@ -1184,8 +1181,8 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
             error.failed_import = single_import
             raise error
 
-        if VERSION in parsed_imported_dsl:
-            imported_dsl_version = parsed_imported_dsl[VERSION]
+        if version.VERSION in parsed_imported_dsl:
+            imported_dsl_version = parsed_imported_dsl[version.VERSION]
             if imported_dsl_version != dsl_version:
                 raise DSLParsingLogicException(
                     28, "An import uses a different "
@@ -1196,7 +1193,7 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
                             dsl_version, single_import, imported_dsl_version))
             # no need to keep imported dsl's version - it's only used for
             # validation against the main blueprint's version
-            del parsed_imported_dsl[VERSION]
+            del parsed_imported_dsl[version.VERSION]
 
         # combine the current file with the combined parsed dsl
         # we have thus far
