@@ -89,55 +89,6 @@ def parse(dsl_string, resources_base_url=None):
     return _parse(dsl_string, resources_base_url)
 
 
-def _dsl_location_to_url(dsl_location, resources_base_url):
-    if dsl_location is not None:
-        dsl_location = _get_resource_location(dsl_location, resources_base_url)
-        if dsl_location is None:
-            ex = DSLParsingLogicException(30, 'Failed on converting dsl '
-                                              'location to url - no suitable '
-                                              'location found '
-                                              'for dsl {0}'
-                                              .format(dsl_location))
-            ex.failed_import = dsl_location
-            raise ex
-    return dsl_location
-
-
-def _load_yaml(yaml_stream, error_message):
-    try:
-        # empty string returns None so we convert it to an empty dict
-        return yaml.safe_load(yaml_stream) or {}
-    except yaml.parser.ParserError, ex:
-        raise DSLParsingFormatException(-1, '{0}: Illegal yaml; {1}'
-                                        .format(error_message, ex))
-
-
-def _create_plan_deployment_plugins(processed_nodes):
-    deployment_plugins = []
-    deployment_plugin_names = set()
-    for node in processed_nodes:
-        if constants.DEPLOYMENT_PLUGINS_TO_INSTALL in node:
-            for deployment_plugin in \
-                    node[constants.DEPLOYMENT_PLUGINS_TO_INSTALL]:
-                if deployment_plugin[constants.PLUGIN_NAME_KEY] \
-                        not in deployment_plugin_names:
-                    deployment_plugins.append(deployment_plugin)
-                    deployment_plugin_names\
-                        .add(deployment_plugin[constants.PLUGIN_NAME_KEY])
-    return deployment_plugins
-
-
-def _create_plan_workflow_plugins(workflows, plugins):
-    workflow_plugins = []
-    workflow_plugin_names = set()
-    for workflow, op_struct in workflows.items():
-        if op_struct['plugin'] not in workflow_plugin_names:
-            plugin_name = op_struct['plugin']
-            workflow_plugins.append(plugins[plugin_name])
-            workflow_plugin_names.add(plugin_name)
-    return workflow_plugins
-
-
 def _parse(dsl_string, resources_base_url, dsl_location=None):
     try:
         parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
@@ -213,17 +164,17 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
             processed_nodes)
 
         plan = models.Plan({
-            'nodes': processed_nodes,
+            constants.NODES: processed_nodes,
             RELATIONSHIPS: top_level_relationships,
             WORKFLOWS: processed_workflows,
             POLICY_TYPES: policy_types,
             POLICY_TRIGGERS: policy_triggers,
             GROUPS: groups,
             INPUTS: inputs,
-            constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
             OUTPUTS: outputs,
-            'workflow_plugins_to_install': workflow_plugins_to_install,
-            'version': version.process_dsl_version(dsl_version)
+            constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
+            constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
+            version.VERSION: version.process_dsl_version(dsl_version)
         })
 
         functions.validate_functions(plan)
@@ -298,6 +249,32 @@ def _post_process_nodes(processed_nodes,
             deployment_plugins_to_install.values()
 
     _validate_agent_plugins_on_host_nodes(processed_nodes)
+
+
+def _create_plan_deployment_plugins(processed_nodes):
+    deployment_plugins = []
+    deployment_plugin_names = set()
+    for node in processed_nodes:
+        if constants.DEPLOYMENT_PLUGINS_TO_INSTALL in node:
+            for deployment_plugin in \
+                    node[constants.DEPLOYMENT_PLUGINS_TO_INSTALL]:
+                if deployment_plugin[constants.PLUGIN_NAME_KEY] \
+                        not in deployment_plugin_names:
+                    deployment_plugins.append(deployment_plugin)
+                    deployment_plugin_names \
+                        .add(deployment_plugin[constants.PLUGIN_NAME_KEY])
+    return deployment_plugins
+
+
+def _create_plan_workflow_plugins(workflows, plugins):
+    workflow_plugins = []
+    workflow_plugin_names = set()
+    for workflow, op_struct in workflows.items():
+        if op_struct['plugin'] not in workflow_plugin_names:
+            plugin_name = op_struct['plugin']
+            workflow_plugins.append(plugins[plugin_name])
+            workflow_plugin_names.add(plugin_name)
+    return workflow_plugins
 
 
 def _create_type_hierarchy(type_name, types):
@@ -1245,6 +1222,29 @@ def _get_resource_location(resource_name,
 
     if resources_base_url:
         return resources_base_url + resource_name
+
+
+def _dsl_location_to_url(dsl_location, resources_base_url):
+    if dsl_location is not None:
+        dsl_location = _get_resource_location(dsl_location, resources_base_url)
+        if dsl_location is None:
+            ex = DSLParsingLogicException(30, 'Failed on converting dsl '
+                                              'location to url - no suitable '
+                                              'location found '
+                                              'for dsl {0}'
+                                          .format(dsl_location))
+            ex.failed_import = dsl_location
+            raise ex
+    return dsl_location
+
+
+def _load_yaml(yaml_stream, error_message):
+    try:
+        # empty string returns None so we convert it to an empty dict
+        return yaml.safe_load(yaml_stream) or {}
+    except yaml.parser.ParserError, ex:
+        raise DSLParsingFormatException(-1, '{0}: Illegal yaml; {1}'
+                                        .format(error_message, ex))
 
 
 def _validate_url_exists(url):
