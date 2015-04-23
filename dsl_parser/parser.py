@@ -396,12 +396,10 @@ def _post_process_nodes(processed_nodes,
 
 def _process_workflows(workflows, plugins, resource_base):
     processed_workflows = {}
-    plugin_names = plugins.keys()
     for name, mapping in workflows.items():
         op_descriptor = \
             _extract_plugin_name_and_operation_mapping_from_operation(
                 plugins=plugins,
-                plugin_names=plugin_names,
                 operation_name=name,
                 operation_content=mapping,
                 error_code=21,
@@ -635,13 +633,11 @@ def _extract_plugin_names_and_operation_mapping_from_interface(
         error_code,
         partial_error_message,
         resource_base):
-    plugin_names = plugins.keys()
     result = []
     for operation_name, operation_content in interface.items():
         op_descriptor = \
             _extract_plugin_name_and_operation_mapping_from_operation(
                 plugins,
-                plugin_names,
                 operation_name,
                 operation_content,
                 error_code,
@@ -803,7 +799,6 @@ def _augment_operation(operation):
 
 def _extract_plugin_name_and_operation_mapping_from_operation(
         plugins,
-        plugin_names,
         operation_name,
         operation_content,
         error_code,
@@ -868,7 +863,7 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
 
     longest_prefix = 0
     longest_prefix_plugin_name = None
-    for plugin_name in plugin_names:
+    for plugin_name in plugins.keys():
         if operation_mapping.startswith('{0}.'.format(plugin_name)):
             plugin_name_length = len(plugin_name)
             if plugin_name_length > longest_prefix:
