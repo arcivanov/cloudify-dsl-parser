@@ -1,3 +1,8 @@
+from dsl_parser import parser
+from dsl_parser import constants
+from dsl_parser import models
+from dsl_parser import functions
+
 import misc
 import plugins
 import node_types
@@ -5,7 +10,6 @@ import node_templates
 import relationships
 import workflows
 import policies
-import properties
 from elements import Element
 
 
@@ -24,7 +28,7 @@ class Blueprint(Element):
         },
 
         'inputs': {
-            'type': properties.Schema,
+            'type': misc.Inputs,
             'version': '1_0',
         },
 
@@ -74,3 +78,24 @@ class Blueprint(Element):
         }
 
     }
+
+    requires = {
+        workflows.Workflows: ['workflow_plugins_to_install']
+    }
+
+    def parse(self, workflow_plugins_to_install):
+        plan = models.Plan({
+            # constants.NODES: processed_nodes,
+            # parser.RELATIONSHIPS: top_level_relationships,
+            parser.WORKFLOWS: self.child(workflows.Workflows).value,
+            parser.POLICY_TYPES: self.child(policies.PolicyTypes).value,
+            parser.POLICY_TRIGGERS: self.child(policies.PolicyTriggers).value,
+            parser.GROUPS: self.child(policies.Groups).value,
+            parser.INPUTS: self.child(misc.Inputs).value,
+            parser.OUTPUTS: self.child(misc.Outputs).value,
+            # constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
+            constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
+            # 'version': version.process_dsl_version(dsl_version)
+        })
+        functions.validate_functions(plan)
+        return plan

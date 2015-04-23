@@ -1,5 +1,6 @@
 from dsl_parser import version
 
+import properties
 from elements import DictElement, Element, Leaf, Dict, List
 
 
@@ -57,3 +58,7 @@ class Outputs(DictElement):
 
     schema = Dict(type=Output,
                   version='1_0')
+
+
+class Inputs(properties.Schema):
+    pass
