@@ -1,0 +1,281 @@
+import networkx as nx
+
+import elements
+
+
+class Parser(object):
+
+    def __init__(self, element_cls, element_name):
+        self.element_cls = element_cls
+        self.element_name = element_name
+
+    def _init_element_context(self, value, inputs):
+        context = Context(self, inputs)
+        self._traverse_element_cls(element_cls=self.element_cls,
+                                   name=self.element_name,
+                                   value=value,
+                                   parent_element=None,
+                                   context=context)
+        context.calculate_element_graph()
+        return context
+
+    def _traverse_element_cls(self,
+                              element_cls,
+                              name,
+                              value,
+                              parent_element,
+                              context):
+        element = element_cls(name=name,
+                              initial_value=value,
+                              context=context)
+        context.add_element(element, parent=parent_element)
+        self._traverse_schema(schema=element_cls.schema,
+                              parent_element=element,
+                              context=context)
+
+    def _traverse_schema(self, schema, parent_element, context):
+        if isinstance(schema, dict):
+            self._traverse_dict_schema(schema=schema,
+                                       parent_element=parent_element,
+                                       context=context)
+        elif isinstance(schema, elements.ElementType):
+            self._traverse_element_type_schema(
+                schema=schema,
+                parent_element=parent_element,
+                context=context)
+        elif isinstance(schema, list):
+            self._traverse_list_schema(schema=schema,
+                                       parent_element=parent_element,
+                                       context=context)
+        else:
+            raise ValueError()
+
+    def _traverse_dict_schema(self, schema,  parent_element, context):
+        if not parent_element:
+            return
+        if not isinstance(parent_element.initial_value, dict):
+            return
+
+        for name, descriptor in schema.items():
+            if name not in parent_element.initial_value:
+                value = None
+            else:
+                value = parent_element.initial_value[name]
+            element_cls = descriptor['type']
+            self._traverse_element_cls(element_cls=element_cls,
+                                       name=name,
+                                       value=value,
+                                       parent_element=parent_element,
+                                       context=context)
+
+    def _traverse_element_type_schema(self, schema, parent_element, context):
+        element_cls = schema.type
+        if isinstance(schema, elements.Leaf):
+            return
+        elif isinstance(schema, elements.Dict):
+            if not isinstance(parent_element.initial_value, dict):
+                return
+            for name, value in parent_element.initial_value.items():
+                self._traverse_element_cls(element_cls=element_cls,
+                                           name=name,
+                                           value=value,
+                                           parent_element=parent_element,
+                                           context=context)
+        elif isinstance(schema, elements.List):
+            if not isinstance(parent_element.initial_value, list):
+                return
+            for index, value in enumerate(parent_element.initial_value):
+                self._traverse_element_cls(element_cls=element_cls,
+                                           name=index,
+                                           value=value,
+                                           parent_element=parent_element,
+                                           context=context)
+        else:
+            raise ValueError()
+
+    def _traverse_list_schema(self, schema, parent_element, context):
+        for schema_item in schema:
+            self._traverse_schema(schema=schema_item,
+                                  parent_element=parent_element,
+                                  context=context)
+
+    def _iterate_elements(self, context):
+        for element in context.elements_graph_topological_sort():
+            required_args = self._extract_element_requirements(
+                element=element,
+                context=context)
+            self._validate_element(element, required_args)
+            self._parse_element(element, required_args)
+
+    @staticmethod
+    def _validate_element(element, required_args):
+        value = element.initial_value
+        if element.required and value is None:
+            raise ValueError('Missing required value for {0}'
+                             .format(element.name))
+        if value is None:
+            return
+
+        def validate_schema(schema):
+            if (isinstance(schema, (dict, elements.Dict)) and
+                    not isinstance(value, dict)):
+                raise ValueError('Expected dict value for {0} but found {1}'
+                                 .format(element.name, value))
+
+            if (isinstance(schema, elements.List) and
+                    not isinstance(value, list)):
+                raise ValueError('Expected list value for {0} but found {1}'
+                                 .format(element.name, value))
+
+            if (isinstance(schema, elements.Leaf) and
+                    not isinstance(value, schema.type)):
+                if isinstance(schema.type, tuple):
+                    type_name = [t.__name__ for t in schema.type]
+                else:
+                    type_name = schema.type.__name__
+                raise ValueError('Expected {0} value for {1} but found {2}'
+                                 .format(type_name,
+                                         element.name,
+                                         value))
+        if isinstance(element.schema, list):
+            validated = False
+            last_error = None
+            for schema_item in element.schema:
+                try:
+                    validate_schema(schema_item)
+                except ValueError as e:
+                    last_error = e
+                else:
+                    validated = True
+                    break
+            if not validated:
+                if not last_error:
+                    raise ValueError('Invalid list schema')
+                else:
+                    raise last_error
+        else:
+            validate_schema(element.schema)
+
+        element.validate(**required_args)
+
+    @staticmethod
+    def _parse_element(element, required_args):
+        value = element.parse(**required_args)
+        element.value = value
+        element.provided = element.calculate_provided(**required_args)
+
+    @staticmethod
+    def _extract_element_requirements(element, context):
+        required_args = {}
+        for required_type, requirements in element.requires.items():
+            requirements = [Requirement(r) if isinstance(r, basestring)
+                            else r for r in requirements]
+            if not requirements:
+                # only set required type as a logical dependency
+                pass
+            elif required_type == 'inputs':
+                for input in requirements:
+                    if input.name not in context.input and input.required:
+                        raise ValueError('Missing required input: {0}'.format(
+                            input.name))
+                    required_args[input.name] = context.inputs.get(input.name)
+            else:
+                required_type_elements = context.element_type_to_elements.get(
+                    required_type, [])
+                for requirement in requirements:
+                    result = []
+                    for required_element in required_type_elements:
+                        if requirement.parsed:
+                            result.append(required_element.value)
+                        else:
+                            if (requirement.name not in
+                                    required_element.provided):
+                                if requirement.required:
+                                    raise ValueError('Missing required value')
+                                else:
+                                    continue
+                            result.append(required_element.provided[
+                                requirement.name])
+
+                    if len(result) != 1 and not requirement.multiple_results:
+                        raise ValueError('Expected exactly one result for'
+                                         'requirement: {0}'
+                                         .format(requirement.name))
+
+                    if not requirement.multiple_results:
+                        result = result[0]
+                    required_args[requirement.name] = result
+
+        return required_args
+
+    def parse(self, value, inputs=None):
+        context = self._init_element_context(value, inputs)
+        self._iterate_elements(context)
+        return context
+
+
+class Context(object):
+
+    def __init__(self, parser, inputs):
+        self.parser = parser
+        self.inputs = inputs or {}
+        self.element_tree = nx.DiGraph()
+        self.element_graph = nx.DiGraph()
+        self.element_type_to_elements = {}
+
+    def add_element(self, element, parent=None):
+        element_type = type(element)
+        if element_type not in self.element_type_to_elements:
+            self.element_type_to_elements[element_type] = []
+        self.element_type_to_elements[element_type].append(element)
+
+        self.element_tree.add_node(element)
+        if parent:
+            self.element_tree.add_edge(parent, element)
+
+    def calculate_element_graph(self):
+        self.element_graph = nx.DiGraph(self.element_tree)
+        for element_type, _elements in self.element_type_to_elements.items():
+            requires = element_type.requires
+            for requirement in requires.keys():
+                if requirement == 'inputs':
+                    continue
+                dependencies = self.element_type_to_elements[requirement]
+                for dependency in dependencies:
+                    for element in _elements:
+                        self.element_graph.add_edge(element, dependency)
+        # we reverse the graph because only netorkx 1.9.1 has the reverse
+        # flag in the topological sort function, it is only used by it
+        # so this should be good
+        self.element_graph.reverse(copy=False)
+
+    def elements_graph_topological_sort(self):
+        return nx.topological_sort(self.element_graph)
+
+    def child_elements_iter(self, element):
+        return self.element_tree.successors_iter(element)
+
+    def ancestors_iter(self, element):
+        current_element = element
+        while True:
+            predecessors = self.element_tree.predecessors(current_element)
+            if not predecessors:
+                return
+            if len(predecessors) > 1:
+                raise ValueError('More than 1 parent found for {0}'
+                                 .format(element))
+            current_element = predecessors[0]
+            yield current_element
+
+
+class Requirement(object):
+
+    def __init__(self,
+                 name,
+                 parsed=False,
+                 multiple_results=False,
+                 required=True):
+        self.name = name
+        self.parsed = parsed
+        self.multiple_results = multiple_results
+        self.required = required
