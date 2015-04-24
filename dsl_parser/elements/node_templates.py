@@ -13,7 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-from dsl_parser import parser as old_parser
+from dsl_parser import (exceptions,
+                        parser as old_parser)
 from dsl_parser.elements import (parser,
                                  node_types as _node_types,
                                  plugins as _plugins,
@@ -58,6 +59,16 @@ class NodeTemplateType(Element):
 
     required = True
     schema = Leaf(type=str)
+    requires = {
+        _node_types.NodeTypes: [parser.Requirement('node_types', parsed=True)]
+    }
+
+    def validate(self, node_types):
+        if self.initial_value not in node_types:
+            err_message = 'Could not locate node type: {0}; existing types: {1}' \
+                .format(self.initial_value,
+                        node_types.keys())
+            raise exceptions.DSLParsingLogicException(7, err_message)
 
 
 class NodeTemplateInstancesDeploy(Element):

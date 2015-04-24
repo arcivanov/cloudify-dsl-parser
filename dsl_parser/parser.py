@@ -128,12 +128,6 @@ def _process_node(node_name,
                       'type': node_type_name}
 
     # handle types
-    if node_type_name not in node_types:
-        err_message = 'Could not locate node type: {0}; existing types: {1}' \
-            .format(node_type_name,
-                    node_types.keys())
-        raise DSLParsingLogicException(7, err_message)
-
     node_type = node_types[node_type_name]
     complete_node_type = _extract_complete_node(node_type,
                                                 node_type_name,

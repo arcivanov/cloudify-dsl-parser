@@ -81,6 +81,8 @@ illegal_property:
 
     def test_node_with_name(self):
         yaml = """
+node_types:
+    test_type: {}
 node_templates:
     test_node:
         name: my_node_name
@@ -148,7 +150,7 @@ node_types:
     def test_node_extra_properties(self):
         # testing for additional properties directly under node
         # (i.e. not within the node's 'properties' section)
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
+        yaml = self.MINIMAL_BLUEPRINT + """
         extra_property: "val"
         """
         self._assert_dsl_parsing_exception_error_code(
