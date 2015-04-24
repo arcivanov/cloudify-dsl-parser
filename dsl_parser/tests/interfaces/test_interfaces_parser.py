@@ -14,7 +14,6 @@
 #    * limitations under the License.
 
 import testtools
-from jsonschema import validate
 from dsl_parser.constants import INTERFACES
 from dsl_parser.interfaces.constants import NO_OP
 
@@ -27,24 +26,21 @@ from dsl_parser.interfaces.interfaces_parser import \
 from dsl_parser.interfaces.interfaces_parser import \
     merge_relationship_type_interfaces
 from dsl_parser.parser import SOURCE_INTERFACES, TARGET_INTERFACES
-from dsl_parser.schemas import (
-    NODE_TYPE_INTERFACES_SCHEMA,
-    RELATIONSHIP_TYPE_INTERFACES_SCHEMA,
-    RELATIONSHIP_INSTANCE_INTERFACES_SCHEMA
-)
-from dsl_parser.schemas import NODE_TEMPLATE_INTERFACES_SCHEMA
+from dsl_parser.elements import operation
+
+from dsl_parser.tests.interfaces import validate
 
 
 class InterfacesParserTest(testtools.TestCase):
 
     def _create_node_type(self, interfaces):
-        validate(interfaces, NODE_TYPE_INTERFACES_SCHEMA)
+        validate(interfaces, operation.NodeTypeInterfaces)
         return {
             INTERFACES: interfaces
         }
 
     def _create_node_template(self, interfaces):
-        validate(interfaces, NODE_TEMPLATE_INTERFACES_SCHEMA)
+        validate(interfaces, operation.NodeTemplateInterfaces)
         return {
             INTERFACES: interfaces
         }
@@ -54,10 +50,10 @@ class InterfacesParserTest(testtools.TestCase):
                                   target_interfaces=None):
         result = {}
         if source_interfaces:
-            validate(source_interfaces, RELATIONSHIP_TYPE_INTERFACES_SCHEMA)
+            validate(source_interfaces, operation.NodeTypeInterfaces)
             result[SOURCE_INTERFACES] = source_interfaces
         if target_interfaces:
-            validate(target_interfaces, RELATIONSHIP_TYPE_INTERFACES_SCHEMA)
+            validate(target_interfaces, operation.NodeTypeInterfaces)
             result[TARGET_INTERFACES] = target_interfaces
         return result
 
@@ -67,11 +63,11 @@ class InterfacesParserTest(testtools.TestCase):
         result = {}
         if source_interfaces:
             validate(source_interfaces,
-                     RELATIONSHIP_INSTANCE_INTERFACES_SCHEMA)
+                     operation.NodeTemplateInterfaces)
             result[SOURCE_INTERFACES] = source_interfaces
         if target_interfaces:
             validate(target_interfaces,
-                     RELATIONSHIP_INSTANCE_INTERFACES_SCHEMA)
+                     operation.NodeTemplateInterfaces)
             result[TARGET_INTERFACES] = target_interfaces
         return result
 

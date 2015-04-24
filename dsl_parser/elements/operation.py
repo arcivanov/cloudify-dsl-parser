@@ -34,13 +34,13 @@ class OperationExecutor(Element):
     def validate(self):
         if self.initial_value is None:
             return
-        full_operation_name = '{0}.{1}'.format(
-            self.ancestor(Interface).name,
-            self.ancestor(Operation).name)
         value = self.initial_value
         valid_executors = [constants.CENTRAL_DEPLOYMENT_AGENT,
                            constants.HOST_AGENT]
         if value not in valid_executors:
+            full_operation_name = '{0}.{1}'.format(
+                self.ancestor(Interface).name,
+                self.ancestor(Operation).name)
             raise exceptions.DSLParsingLogicException(
                 28, 'Operation {0} has an illegal executor value: {1}. '
                     'valid values are [{2}]'
