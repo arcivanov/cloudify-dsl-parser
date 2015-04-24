@@ -60,17 +60,6 @@ OpDescriptor = collections.namedtuple('OpDescriptor', [
     'plugin', 'op_struct', 'name'])
 
 
-class ParseContext(dict):
-    @property
-    def version(self):
-        return self['version']
-
-    @version.setter
-    def version(self, value):
-        self['version'] = value
-parse_context = ParseContext()
-
-
 def parse_from_path(dsl_file_path, resources_base_url=None):
     with open(dsl_file_path, 'r') as f:
         dsl_string = f.read()
@@ -102,39 +91,28 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
 
     parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
 
-    try:
-        parser = Parser()
+    parser = Parser()
 
-        # extract version
-        parsed_version = parser.parse(
-            value=parsed_dsl,
-            element_cls=blueprint.BlueprintVersionExtractor,
-            strict=False)['parsed_version']
-        parse_context.version = parsed_version
+    # handle imports
+    result = parser.parse(
+        value=parsed_dsl,
+        inputs={
+            'main_blueprint': parsed_dsl,
+            'resources_base_url': resources_base_url,
+            'blueprint_location': dsl_location
+        },
+        element_cls=blueprint.BlueprintImporter,
+        strict=False)
+    resource_base = result['resource_base']
+    merged_blueprint = result['merged_blueprint']
 
-        # handle imports
-        result = parser.parse(
-            value=parsed_dsl,
-            inputs={
-                'main_blueprint': parsed_dsl,
-                'resources_base_url': resources_base_url,
-                'blueprint_location': dsl_location
-            },
-            element_cls=blueprint.BlueprintImporter,
-            strict=False)
-        resource_base = result['resource_base']
-        merged_blueprint = result['merged_blueprint']
-
-        # parse blueprint
-        return parser.parse(
-            value=merged_blueprint,
-            inputs={
-                'resource_base': resource_base
-            },
-            element_cls=blueprint.Blueprint)
-
-    finally:
-        parse_context.clear()
+    # parse blueprint
+    return parser.parse(
+        value=merged_blueprint,
+        inputs={
+            'resource_base': resource_base
+        },
+        element_cls=blueprint.Blueprint)
 
 
 def _process_node(node_name,
@@ -592,21 +570,6 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
             'max_retries', None)
         operation_retry_interval = operation_content.get(
             'retry_interval', None)
-
-    if not version.is_version_equal_or_greater_than(
-            parse_context.version,
-            version.parse_dsl_version(version.DSL_VERSION_1_1)):
-        def error_message(field):
-            return (
-                'Cannot use {0} with {1} in operation {2}. '
-                '{3}.'.format(field,
-                              parse_context.version,
-                              operation_name,
-                              partial_error_message))
-        if operation_max_retries:
-            raise DSLParsingLogicException(81, error_message('max_retries'))
-        if operation_retry_interval:
-            raise DSLParsingLogicException(81, error_message('retry_interval'))
 
     if not operation_mapping:
         if is_workflows:
