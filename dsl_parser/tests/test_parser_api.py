@@ -2200,13 +2200,6 @@ plugins:
         self.assertEquals('test_plugin2', test_plugin2['name'])
         self.assertEquals(2, len(nodes[0]['plugins_to_install']))
 
-    def test_node_cloudify_runtime_property(self):
-        yaml = self.MINIMAL_BLUEPRINT
-        result = self.parse(yaml)
-        self.assertEquals(
-            {},
-            result['nodes'][0]['properties']['cloudify_runtime'])
-
     def test_import_resources(self):
         resource_file_name = 'resource_file.yaml'
         file_name = self.make_file_with_name(

@@ -123,7 +123,8 @@ def _process_node(node_name,
     node_type_name = node['type']
     processed_node = {'name': node_name,
                       'id': node_name,
-                      'type': node_type_name}
+                      'type': node_type_name,
+                      'instances': node['instances']}
 
     # handle types
     node_type = node_types[node_type_name]
@@ -143,17 +144,11 @@ def _process_node(node_name,
             complete_node_type[INTERFACES],
             plugins,
             processed_node, 10, resource_base)
-
         processed_node['operations'] = operations
 
     # handle relationships
     _process_node_relationships(node, node_name, node_names_set,
                                 processed_node, top_level_relationships)
-
-    processed_node[PROPERTIES]['cloudify_runtime'] = {}
-
-    processed_node['instances'] = node['instances'] \
-        if 'instances' in node else {'deploy': 1}
 
     return processed_node
 
