@@ -31,9 +31,7 @@ from dsl_parser.elements.elements import Element
 class BlueprintImporter(Element):
 
     schema = {
-        'imports': {
-            'type': imports.ImportsLoader,
-        },
+        'imports': imports.ImportsLoader,
     }
     requires = {
         imports.ImportsLoader: ['resource_base']
@@ -49,57 +47,19 @@ class BlueprintImporter(Element):
 class Blueprint(Element):
 
     schema = {
-
-        'tosca_definitions_version': {
-            'type': misc.ToscaDefinitionsVersion,
-        },
-
-        'imports': {
-            'type': imports.Imports,
-        },
-
-        'inputs': {
-            'type': misc.Inputs,
-        },
-
-        'plugins': {
-            'type': plugins.Plugins,
-        },
-
-        'node_types': {
-            'type': node_types.NodeTypes,
-        },
-
-        'relationships': {
-            'type': relationships.Relationships,
-        },
-
-        'node_templates': {
-            'type': node_templates.NodeTemplates,
-        },
-
-        'policy_types': {
-            'type': policies.PolicyTypes,
-        },
-
-        'policy_triggers': {
-            'type': policies.PolicyTriggers,
-        },
-
-        'groups': {
-            'type': policies.Groups,
-        },
-
-        'workflows': {
-            'type': workflows.Workflows,
-        },
-
-        'outputs': {
-            'type': misc.Outputs,
-        }
-
+        'tosca_definitions_version': misc.ToscaDefinitionsVersion,
+        'imports': imports.Imports,
+        'inputs': misc.Inputs,
+        'plugins': plugins.Plugins,
+        'node_types': node_types.NodeTypes,
+        'relationships': relationships.Relationships,
+        'node_templates': node_templates.NodeTemplates,
+        'policy_types': policies.PolicyTypes,
+        'policy_triggers': policies.PolicyTriggers,
+        'groups': policies.Groups,
+        'workflows': workflows.Workflows,
+        'outputs': misc.Outputs,
     }
-
     requires = {
         node_templates.NodeTemplates: ['plan_deployment_plugins'],
         workflows.Workflows: ['workflow_plugins_to_install']

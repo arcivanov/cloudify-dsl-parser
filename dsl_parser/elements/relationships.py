@@ -34,22 +34,10 @@ class DerivedFrom(Element):
 class Relationship(Element):
 
     schema = {
-
-        'derived_from': {
-            'type': DerivedFrom,
-        },
-
-        'properties': {
-            'type': properties.Schema,
-        },
-
-        'source_interfaces': {
-            'type': operation.NodeTypeInterfaces,
-        },
-
-        'target_interfaces': {
-            'type': operation.NodeTypeInterfaces,
-        }
+        'derived_from': DerivedFrom,
+        'properties': properties.Schema,
+        'source_interfaces': operation.NodeTypeInterfaces,
+        'target_interfaces': operation.NodeTypeInterfaces,
     }
     requires = {
         'inputs': [parser.Requirement('resource_base', required=False)],

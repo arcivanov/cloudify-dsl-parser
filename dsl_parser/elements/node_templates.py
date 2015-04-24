@@ -62,58 +62,35 @@ class NodeTemplateType(Element):
 
 class NodeTemplateInstancesDeploy(Element):
 
-    # required = True
+    required = True
     schema = Leaf(type=int)
 
     def validate(self):
         if self.initial_value <= 0:
             raise ValueError('deploy instances must be a positive number')
 
-    @property
-    def required(self):
-        return True
-
 
 class NodeTemplateInstances(DictElement):
 
     schema = {
-
-        'deploy': {
-            'type': NodeTemplateInstancesDeploy,
-        }
-
+        'deploy': NodeTemplateInstancesDeploy
     }
 
     def parse(self):
-        result = self.initial_value
-        if result is None:
-            result = {'deploy': 1}
-        return result
+        if self.initial_value is None:
+            return {'deploy': 1}
+        else:
+            return self.initial_value
 
 
 class NodeTemplateRelationship(DictElement):
 
     schema = {
-
-        'type': {
-            'type': NodeTemplateRelationshipType,
-        },
-
-        'target': {
-            'type': NodeTemplateRelationshipTarget,
-        },
-
-        'properties': {
-            'type': NodeTemplateRelationshipProperties,
-        },
-
-        'source_interfaces': {
-            'type': operation.NodeTemplateInterfaces,
-        },
-
-        'target_interfaces': {
-            'type': operation.NodeTemplateInterfaces,
-        }
+        'type': NodeTemplateRelationshipType,
+        'target': NodeTemplateRelationshipTarget,
+        'properties': NodeTemplateRelationshipProperties,
+        'source_interfaces': operation.NodeTemplateInterfaces,
+        'target_interfaces': operation.NodeTemplateInterfaces,
     }
 
 
@@ -128,29 +105,12 @@ class NodeTemplateRelationships(Element):
 class NodeTemplate(Element):
 
     schema = {
-
-        'type': {
-            'type': NodeTemplateType,
-        },
-
-        'instances': {
-            'type': NodeTemplateInstances,
-        },
-
-        'interfaces': {
-            'type': operation.NodeTemplateInterfaces,
-        },
-
-        'relationships': {
-            'type': NodeTemplateRelationships,
-        },
-
-        'properties': {
-            'type': NodeTemplateProperties,
-        }
-
+        'type': NodeTemplateType,
+        'instances': NodeTemplateInstances,
+        'interfaces': operation.NodeTemplateInterfaces,
+        'relationships': NodeTemplateRelationships,
+        'properties': NodeTemplateProperties,
     }
-
     requires = {
         'inputs': [parser.Requirement('resource_base', required=False)],
         _relationships.Relationships: [parser.Requirement('relationships',
@@ -184,7 +144,6 @@ class NodeTemplates(Element):
         _node_types.NodeTypes: [parser.Requirement('node_types',
                                                    parsed=True)]
     }
-
     provides = [
         'node_template_names',
         'plan_deployment_plugins'

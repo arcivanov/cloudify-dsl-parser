@@ -33,13 +33,8 @@ class PolicyTriggerSource(Element):
 class PolicyTrigger(DictElement):
 
     schema = {
-        'parameters': {
-            'type': properties.Schema,
-        },
-
-        'source': {
-            'type': PolicyTriggerSource,
-        }
+        'parameters': properties.Schema,
+        'source': PolicyTriggerSource,
     }
 
 
@@ -52,13 +47,8 @@ class PolicyTypeSource(Element):
 class PolicyType(DictElement):
 
     schema = {
-        'properties': {
-            'type': properties.Schema,
-        },
-
-        'source': {
-            'type': PolicyTypeSource,
-        }
+        'properties': properties.Schema,
+        'source': PolicyTypeSource,
     }
 
 
@@ -165,14 +155,8 @@ class GroupPolicyTriggerParameters(Element):
 class GroupPolicyTrigger(DictElement):
 
     schema = {
-        'type': {
-            'type': GroupPolicyTriggerType,
-        },
-
-        'parameters': {
-            'type': GroupPolicyTriggerParameters,
-        }
-
+        'type': GroupPolicyTriggerType,
+        'parameters': GroupPolicyTriggerParameters,
     }
 
 
@@ -184,19 +168,9 @@ class GroupPolicyTriggers(DictElement):
 class GroupPolicy(DictElement):
 
     schema = {
-
-        'type': {
-            'type': GroupPolicyType,
-        },
-
-        'properties': {
-            'type': GroupPolicyProperties,
-        },
-
-        'triggers': {
-            'type': GroupPolicyTriggers,
-        }
-
+        'type': GroupPolicyType,
+        'properties': GroupPolicyProperties,
+        'triggers': GroupPolicyTriggers,
     }
 
 
@@ -239,13 +213,8 @@ class GroupPolicies(DictElement):
 class Group(DictElement):
 
     schema = {
-        'members': {
-            'type': GroupMembers,
-        },
-
-        'policies': {
-            'type': GroupPolicies,
-        }
+        'members': GroupMembers,
+        'policies': GroupPolicies,
     }
 
 

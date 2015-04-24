@@ -62,23 +62,10 @@ class PluginInstallArguments(Element):
 class Plugin(DictElement):
 
     schema = {
-
-        'source': {
-            'type': PluginSource,
-        },
-
-        'executor': {
-            'type': PluginExecutor,
-        },
-
-        'install': {
-            'type': PluginInstall,
-        },
-
-        'install_arguments': {
-            'type': PluginInstallArguments,
-        },
-
+        'source': PluginSource,
+        'executor': PluginExecutor,
+        'install': PluginInstall,
+        'install_arguments': PluginInstallArguments,
     }
 
     def validate(self):

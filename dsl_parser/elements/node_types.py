@@ -29,19 +29,9 @@ class DerivedFrom(Element):
 class NodeType(Element):
 
     schema = {
-
-        'derived_from': {
-            'type': DerivedFrom,
-        },
-
-        'interfaces': {
-            'type': operation.NodeTypeInterfaces,
-        },
-
-        'properties': {
-            'type': properties.Schema,
-        }
-
+        'derived_from': DerivedFrom,
+        'interfaces': operation.NodeTypeInterfaces,
+        'properties': properties.Schema,
     }
 
 

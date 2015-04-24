@@ -86,25 +86,11 @@ class NodeTypeOperation(Operation):
     schema = [
         Leaf(type=str),
         {
-            'implementation': {
-                'type': OperationImplementation,
-            },
-
-            'inputs': {
-                'type': properties.Schema,
-            },
-
-            'executor': {
-                'type': OperationExecutor,
-            },
-
-            'max_retries': {
-                'type': OperationMaxRetries,
-            },
-
-            'retry_interval': {
-                'type': OperationRetryInterval,
-            }
+            'implementation': OperationImplementation,
+            'inputs': properties.Schema,
+            'executor': OperationExecutor,
+            'max_retries': OperationMaxRetries,
+            'retry_interval': OperationRetryInterval,
         }
     ]
 
@@ -114,31 +100,16 @@ class NodeTemplateOperation(Operation):
     schema = [
         Leaf(type=str),
         {
-            'implementation': {
-                'type': OperationImplementation,
-            },
-
-            'inputs': {
-                'type': NodeTemplateOperationInputs,
-            },
-
-            'executor': {
-                'type': OperationExecutor,
-            },
-
-            'max_retries': {
-                'type': OperationMaxRetries,
-            },
-
-            'retry_interval': {
-                'type': OperationRetryInterval,
-            }
+            'implementation': OperationImplementation,
+            'inputs': NodeTemplateOperationInputs,
+            'executor': OperationExecutor,
+            'max_retries': OperationMaxRetries,
+            'retry_interval': OperationRetryInterval,
         }
     ]
 
 
 class Interface(DictElement):
-
     pass
 
 

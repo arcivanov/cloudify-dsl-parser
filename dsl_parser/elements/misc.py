@@ -58,15 +58,8 @@ class OutputValue(Element):
 class Output(Element):
 
     schema = {
-
-        'description': {
-            'type': OutputDescription,
-        },
-
-        'value': {
-            'type': OutputValue,
-        }
-
+        'description': OutputDescription,
+        'value': OutputValue
     }
 
 

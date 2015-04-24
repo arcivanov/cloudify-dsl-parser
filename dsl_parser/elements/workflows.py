@@ -35,13 +35,8 @@ class Workflow(Element):
     schema = [
         Leaf(type=str),
         {
-            'mapping': {
-                'type': WorkflowMapping,
-            },
-
-            'parameters': {
-                'type': properties.Schema
-            }
+            'mapping': WorkflowMapping,
+            'parameters': properties.Schema
         }
     ]
     requires = {

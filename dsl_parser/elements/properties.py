@@ -47,19 +47,9 @@ class SchemaPropertyType(Element):
 class SchemaProperty(Element):
 
     schema = {
-
-        'default': {
-            'type': SchemaPropertyDefault,
-        },
-
-        'description': {
-            'type': SchemaPropertyDescription,
-        },
-
-        'type': {
-            'type': SchemaPropertyType,
-        }
-
+        'default': SchemaPropertyDefault,
+        'description': SchemaPropertyDescription,
+        'type': SchemaPropertyType,
     }
 
 

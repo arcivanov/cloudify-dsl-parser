@@ -68,12 +68,11 @@ class Parser(object):
         if not isinstance(parent_element.initial_value, dict):
             return
 
-        for name, descriptor in schema.items():
+        for name, element_cls in schema.items():
             if name not in parent_element.initial_value:
                 value = None
             else:
                 value = parent_element.initial_value[name]
-            element_cls = descriptor['type']
             self._traverse_element_cls(element_cls=element_cls,
                                        name=name,
                                        value=value,
