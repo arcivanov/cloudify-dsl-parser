@@ -110,7 +110,7 @@ node_types:
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
 plugins:
     test_plugin:
-        executor: host_agent
+        executor: central_deployment_agent
         source: dummy
 
 node_types:
