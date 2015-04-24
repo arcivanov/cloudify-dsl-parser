@@ -1,20 +1,34 @@
+########
+# Copyright (c) 2015 GigaSpaces Technologies Ltd. All rights reserved
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+#    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    * See the License for the specific language governing permissions and
+#    * limitations under the License.
+
 import pprint
 
 import yaml
 
-import blueprint
-import policies
-import plugins
-import operation
-import node_templates
-import elements
-from parser import Parser
+from dsl_parser.elements import (blueprint,
+                                 policies,
+                                 plugins,
+                                 operation,
+                                 node_templates,
+                                 elements,
+                                 parser)
 
 
-def test_element(element_cls, element_name, value, inputs=None):
-    p = Parser(element_cls=element_cls,
-               element_name=element_name)
-    result = p.parse(value, inputs=inputs)
+def test_element(element_cls, value, inputs=None):
+    p = parser.Parser()
+    result = p.parse(value, element_cls=element_cls, inputs=inputs)
     pprint.pprint(result)
 
 
@@ -34,7 +48,7 @@ p3:
 '''
 
     plugins_obj = yaml.load(test_data)
-    test_element(plugins.Plugins, element_name='plugins', value=plugins_obj)
+    test_element(plugins.Plugins, value=plugins_obj)
 
 
 def test_node_template_interfaces():
@@ -57,7 +71,7 @@ interface1:
     op3: p1.tasks.op3
 '''
     interfaces_obj = yaml.load(test_data)
-    test_element(operation.NodeTemplateInterfaces, element_name='interfaces',
+    test_element(operation.NodeTemplateInterfaces,
                  value=interfaces_obj)
 
 
@@ -122,7 +136,7 @@ groups:
                             param2: another_value
 '''
     policies_obj = yaml.load(test_data)
-    test_element(PolicyTestElement, element_name='test',
+    test_element(PolicyTestElement,
                  value=policies_obj)
 
 
@@ -133,7 +147,6 @@ def test_version_extractor():
 
         plugins_obj = yaml.load(test_data)
         test_element(blueprint.BlueprintVersionExtractor,
-                     element_name='blueprint',
                      value=plugins_obj)
     test_version('1_0')
     test_version('1_1')
@@ -158,7 +171,6 @@ node_types:
             'file:///home/dan/dev/cloudify/cloudify-manager/blueprint.yaml'
     }
     test_element(blueprint.BlueprintImporter,
-                 element_name='blueprint_imports',
                  value=test_obj, inputs=inputs)
 
 
