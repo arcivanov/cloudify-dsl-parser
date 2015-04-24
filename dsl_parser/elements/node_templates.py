@@ -15,11 +15,11 @@
 
 from dsl_parser import (exceptions,
                         parser as old_parser)
-from dsl_parser.elements import (parser,
-                                 node_types as _node_types,
+from dsl_parser.elements import (node_types as _node_types,
                                  plugins as _plugins,
                                  relationships as _relationships,
                                  operation)
+from dsl_parser.elements.parser import Value, Requirement
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
                                           Leaf,
@@ -40,8 +40,7 @@ class NodeTemplateRelationshipType(Element):
     required = True
     schema = Leaf(type=str)
     requires = {
-        _relationships.Relationships: [parser.Requirement('relationships',
-                                                          parsed=True)]
+        _relationships.Relationships: [Value('relationships')]
     }
 
     def validate(self, relationships):
@@ -90,7 +89,7 @@ class NodeTemplateType(Element):
     required = True
     schema = Leaf(type=str)
     requires = {
-        _node_types.NodeTypes: [parser.Requirement('node_types', parsed=True)]
+        _node_types.NodeTypes: [Value('node_types')]
     }
 
     def validate(self, node_types):
@@ -154,12 +153,10 @@ class NodeTemplate(Element):
         'properties': NodeTemplateProperties,
     }
     requires = {
-        'inputs': [parser.Requirement('resource_base', required=False)],
-        _relationships.Relationships: [parser.Requirement('relationships',
-                                                          parsed=True)],
-        _plugins.Plugins: [parser.Requirement('plugins', parsed=True)],
-        _node_types.NodeTypes: [parser.Requirement('node_types',
-                                                   parsed=True)]
+        'inputs': [Requirement('resource_base', required=False)],
+        _relationships.Relationships: [Value('relationships')],
+        _plugins.Plugins: [Value('plugins')],
+        _node_types.NodeTypes: [Value('node_types')]
     }
 
     def parse(self, node_types, relationships, plugins, resource_base):
@@ -179,12 +176,10 @@ class NodeTemplates(Element):
     required = True
     schema = Dict(type=NodeTemplate)
     requires = {
-        'inputs': [parser.Requirement('resource_base', required=False)],
-        _relationships.Relationships: [parser.Requirement('relationships',
-                                                          parsed=True)],
-        _plugins.Plugins: [parser.Requirement('plugins', parsed=True)],
-        _node_types.NodeTypes: [parser.Requirement('node_types',
-                                                   parsed=True)]
+        'inputs': [Requirement('resource_base', required=False)],
+        _relationships.Relationships: [Value('relationships')],
+        _plugins.Plugins: [Value('plugins')],
+        _node_types.NodeTypes: [Value('node_types')]
     }
     provides = [
         'node_template_names',

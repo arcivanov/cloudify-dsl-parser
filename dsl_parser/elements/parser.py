@@ -324,3 +324,15 @@ class Requirement(object):
         self.parsed = parsed
         self.multiple_results = multiple_results
         self.required = required
+
+
+class Value(Requirement):
+
+    def __init__(self,
+                 name,
+                 multiple_results=False,
+                 required=True):
+        super(Value, self).__init__(name,
+                                    parsed=True,
+                                    multiple_results=multiple_results,
+                                    required=required)

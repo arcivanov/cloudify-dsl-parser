@@ -16,10 +16,10 @@
 import copy
 
 from dsl_parser import parser as old_parser
-from dsl_parser.elements import (parser,
-                                 properties,
+from dsl_parser.elements import (properties,
                                  operation,
                                  plugins as _plugins)
+from dsl_parser.elements.parser import Value, Requirement
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
                                           Leaf,
@@ -40,8 +40,8 @@ class Relationship(Element):
         'target_interfaces': operation.NodeTypeInterfaces,
     }
     requires = {
-        'inputs': [parser.Requirement('resource_base', required=False)],
-        _plugins.Plugins: [parser.Requirement('plugins', parsed=True)]
+        'inputs': [Requirement('resource_base', required=False)],
+        _plugins.Plugins: [Value('plugins')]
     }
 
     def parse(self, plugins, resource_base):

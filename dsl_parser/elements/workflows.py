@@ -14,9 +14,9 @@
 #    * limitations under the License.
 
 from dsl_parser import parser as old_parser
-from dsl_parser.elements import (parser,
-                                 properties,
+from dsl_parser.elements import (properties,
                                  plugins as _plugins)
+from dsl_parser.elements.parser import Value, Requirement
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
                                           Leaf,
@@ -40,8 +40,8 @@ class Workflow(Element):
         }
     ]
     requires = {
-        'inputs': [parser.Requirement('resource_base', required=False)],
-        _plugins.Plugins: [parser.Requirement('plugins', parsed=True)]
+        'inputs': [Requirement('resource_base', required=False)],
+        _plugins.Plugins: [Value('plugins')]
     }
 
     def parse(self, plugins, resource_base):
@@ -61,7 +61,7 @@ class Workflows(DictElement):
 
     schema = Dict(type=Workflow)
     requires = {
-        _plugins.Plugins: [parser.Requirement('plugins', parsed=True)]
+        _plugins.Plugins: [Value('plugins')]
     }
     provides = ['workflow_plugins_to_install']
 

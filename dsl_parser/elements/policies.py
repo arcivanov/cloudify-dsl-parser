@@ -15,9 +15,9 @@
 
 from dsl_parser import (exceptions,
                         utils)
-from dsl_parser.elements import (parser,
-                                 node_templates,
+from dsl_parser.elements import (node_templates,
                                  properties)
+from dsl_parser.elements.parser import Value
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
                                           Leaf,
@@ -67,7 +67,7 @@ class GroupPolicyType(Element):
     required = True
     schema = Leaf(type=str)
     requires = {
-        PolicyTypes: [parser.Requirement('policy_types', parsed=True)]
+        PolicyTypes: [Value('policy_types')]
     }
 
     def validate(self, policy_types):
@@ -86,7 +86,7 @@ class GroupPolicyProperties(Element):
     schema = Leaf(type=dict)
     requires = {
         GroupPolicyType: [],
-        PolicyTypes: [parser.Requirement('policy_types', parsed=True)]
+        PolicyTypes: [Value('policy_types')]
     }
 
     def parse(self, policy_types):
@@ -110,7 +110,7 @@ class GroupPolicyTriggerType(Element):
     required = True
     schema = Leaf(type=str)
     requires = {
-        PolicyTriggers: [parser.Requirement('policy_triggers', parsed=True)]
+        PolicyTriggers: [Value('policy_triggers')]
     }
 
     def validate(self, policy_triggers):
@@ -131,7 +131,7 @@ class GroupPolicyTriggerParameters(Element):
     schema = Leaf(type=dict)
     requires = {
         GroupPolicyTriggerType: [],
-        PolicyTriggers: [parser.Requirement('policy_triggers', parsed=True)]
+        PolicyTriggers: [Value('policy_triggers')]
     }
 
     def parse(self, policy_triggers):
