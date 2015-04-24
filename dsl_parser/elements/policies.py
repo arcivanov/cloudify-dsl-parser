@@ -202,6 +202,9 @@ class GroupMembers(Element):
 
     def validate(self, node_template_names):
         for member in self.initial_value:
+            if not isinstance(member, basestring):
+                raise exceptions.DSLParsingFormatException(
+                    1, "bad member type: {0}".format(member))
             if member not in node_template_names:
                 raise exceptions.DSLParsingLogicException(
                     40,

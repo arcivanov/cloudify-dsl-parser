@@ -101,16 +101,16 @@ class Parser(object):
                                   parent_element=parent_element,
                                   context=context)
 
-    def _iterate_elements(self, context):
+    def _iterate_elements(self, context, strict):
         for element in context.elements_graph_topological_sort():
             required_args = self._extract_element_requirements(
                 element=element,
                 context=context)
-            self._validate_element(element, required_args)
+            self._validate_element(element, required_args, strict=strict)
             self._parse_element(element, required_args)
 
     @staticmethod
-    def _validate_element(element, required_args):
+    def _validate_element(element, required_args, strict):
         value = element.initial_value
         if element.required and value is None:
             raise exceptions.DSLParsingFormatException(
@@ -125,6 +125,12 @@ class Parser(object):
                 raise exceptions.DSLParsingFormatException(
                     1, 'Expected dict value for {0} but found {1}'
                        .format(element.name, value))
+
+            if strict and isinstance(schema, dict):
+                for key in value.keys():
+                    if key not in schema:
+                        raise exceptions.DSLParsingFormatException(
+                            1, '{0} is not permitted'.format(key))
 
             if (isinstance(schema, elements.List) and
                     not isinstance(value, list)):
@@ -218,9 +224,9 @@ class Parser(object):
 
         return required_args
 
-    def parse(self, value, inputs=None):
+    def parse(self, value, inputs=None, strict=True):
         context = self._init_element_context(value, inputs)
-        self._iterate_elements(context)
+        self._iterate_elements(context, strict=strict)
         return context.root_element.value
 
 

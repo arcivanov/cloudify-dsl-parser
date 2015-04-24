@@ -107,7 +107,8 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     try:
         parser = Parser(blueprint.BlueprintVersionExtractor,
                         element_name='version_extractor')
-        parsed_version = parser.parse(parsed_dsl)['parsed_version']
+        parsed_version = parser.parse(parsed_dsl,
+                                      strict=False)['parsed_version']
         parse_context.version = parsed_version
 
         parser = Parser(blueprint.BlueprintImporter,
@@ -116,7 +117,7 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
             'main_blueprint': parsed_dsl,
             'resources_base_url': resources_base_url,
             'blueprint_location': dsl_location
-        })
+        }, strict=False)
         resource_base = result['resource_base']
         merged_blueprint = result['merged_blueprint']
 

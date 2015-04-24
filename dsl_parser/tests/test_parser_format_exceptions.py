@@ -68,7 +68,7 @@ node_templates:
             yaml, 1, DSLParsingFormatException)
 
     def test_illegal_first_level_property(self):
-        yaml = """
+        yaml = self.MINIMAL_BLUEPRINT + """
 node_templates:
     test_node:
         type: test_type
@@ -811,14 +811,15 @@ groups:
         policies:
             policy:
                 type: type
-                properties:
-                    key: value
 """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
 
     def test_groups_missing_policies(self):
         yaml = self.MINIMAL_BLUEPRINT + """
+node_templates:
+    member:
+        type: test_type
 policy_types:
     type:
         properties: {}
@@ -832,6 +833,9 @@ groups:
 
     def test_groups_extra_property(self):
         yaml = self.MINIMAL_BLUEPRINT + """
+node_templates:
+    member:
+        type: test_type
 policy_types:
     type:
         properties: {}
@@ -842,8 +846,6 @@ groups:
         policies:
             policy:
                 type: type
-                properties:
-                    key: value
         extra_property: extra_property
 """
         self._assert_dsl_parsing_exception_error_code(
@@ -851,6 +853,9 @@ groups:
 
     def test_groups_policy_missing_type(self):
         yaml = self.MINIMAL_BLUEPRINT + """
+node_templates:
+    member:
+        type: test_type
 policy_types:
     type:
         properties: {}
@@ -868,6 +873,9 @@ groups:
 
     def test_groups_policy_extra_property(self):
         yaml = self.MINIMAL_BLUEPRINT + """
+node_templates:
+    member:
+        type: test_type
 policy_types:
     type:
         properties: {}
@@ -878,27 +886,7 @@ groups:
         policies:
             policy:
                 type: type
-                properties:
-                    key: value
                 extra_property: extra_property
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_group_members_non_unique(self):
-        yaml = self.MINIMAL_BLUEPRINT + """
-policy_types:
-    type:
-        properties: {}
-        source: source
-groups:
-    group:
-        members: [member, member]
-        policies:
-            policy:
-                type: type
-                properties:
-                    key: value
 """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
@@ -915,8 +903,6 @@ groups:
         policies:
             policy:
                 type: type
-                properties:
-                    key: value
 """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
@@ -933,14 +919,15 @@ groups:
         policies:
             policy:
                 type: type
-                properties:
-                    key: value
 """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
 
     def test_group_policy_type_bad_type(self):
         yaml = self.MINIMAL_BLUEPRINT + """
+node_templates:
+    vm:
+        type: test_type
 groups:
     group:
         members: [vm]
@@ -955,6 +942,9 @@ groups:
 
     def test_group_policy_type_bad_properties(self):
         yaml = self.MINIMAL_BLUEPRINT + """
+node_templates:
+    vm:
+        type: test_type
 policy_types:
     type:
         properties: {}
