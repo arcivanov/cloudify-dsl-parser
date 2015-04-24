@@ -1957,6 +1957,7 @@ relationships:
                     inputs: {}
 """
         result = self.parse(yaml)
+        node = [n for n in result['nodes'] if n['name'] == 'test_node1']
         plugin = result['nodes'][1]['plugins_to_install'][0]
         self.assertEquals('test_plugin', plugin['name'])
         self.assertEquals(1, len(result['nodes'][1]['plugins_to_install']))
