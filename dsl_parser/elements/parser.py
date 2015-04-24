@@ -116,8 +116,6 @@ class Parser(object):
             raise exceptions.DSLParsingFormatException(
                 1,
                 'Missing required value for {0}'.format(element.name))
-        if value is None:
-            return
 
         def validate_schema(schema):
             if (isinstance(schema, (dict, elements.Dict)) and
@@ -149,25 +147,26 @@ class Parser(object):
                        .format(type_name,
                                element.name,
                                value))
-        if isinstance(element.schema, list):
-            validated = False
-            last_error = None
-            for schema_item in element.schema:
-                try:
-                    validate_schema(schema_item)
-                except exceptions.DSLParsingFormatException as e:
-                    last_error = e
-                else:
-                    validated = True
-                    break
-            if not validated:
-                if not last_error:
-                    raise exceptions.DSLParsingFormatException(
-                        1, 'Invalid list schema')
-                else:
-                    raise last_error
-        else:
-            validate_schema(element.schema)
+        if value is not None:
+            if isinstance(element.schema, list):
+                validated = False
+                last_error = None
+                for schema_item in element.schema:
+                    try:
+                        validate_schema(schema_item)
+                    except exceptions.DSLParsingFormatException as e:
+                        last_error = e
+                    else:
+                        validated = True
+                        break
+                if not validated:
+                    if not last_error:
+                        raise exceptions.DSLParsingFormatException(
+                            1, 'Invalid list schema')
+                    else:
+                        raise last_error
+            else:
+                validate_schema(element.schema)
 
         element.validate(**required_args)
 
