@@ -7,7 +7,7 @@ from elements import DictElement, Element, Leaf, Dict
 class PluginExecutor(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
     def validate(self):
         if self.initial_value not in [constants.CENTRAL_DEPLOYMENT_AGENT,
@@ -25,12 +25,12 @@ class PluginExecutor(Element):
 
 class PluginSource(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class PluginInstall(Element):
 
-    schema = Leaf(type=bool, version='1_0')
+    schema = Leaf(type=bool)
 
     def parse(self):
         value = self.initial_value
@@ -39,7 +39,7 @@ class PluginInstall(Element):
 
 class PluginInstallArguments(Element):
 
-    schema = Leaf(type=str, version='1_1')
+    schema = Leaf(type=str)
 
 
 class Plugin(DictElement):
@@ -48,22 +48,18 @@ class Plugin(DictElement):
 
         'source': {
             'type': PluginSource,
-            'version': '1_0'
         },
 
         'executor': {
             'type': PluginExecutor,
-            'version': '1_0'
         },
 
         'install': {
             'type': PluginInstall,
-            'version': '1_0'
         },
 
         'install_arguments': {
             'type': PluginInstallArguments,
-            'version': '1_1'
         },
 
     }
@@ -85,4 +81,4 @@ class Plugin(DictElement):
 
 class Plugins(DictElement):
 
-    schema = Dict(type=Plugin, version='1_0')
+    schema = Dict(type=Plugin)

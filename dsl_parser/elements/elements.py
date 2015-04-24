@@ -1,10 +1,9 @@
 class ElementType(object):
 
-    def __init__(self, type, version=None):
+    def __init__(self, type):
         if isinstance(type, list):
             type = tuple(type)
         self.type = type
-        self.version = version
 
 
 class Leaf(ElementType):

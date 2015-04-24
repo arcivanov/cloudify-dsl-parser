@@ -6,17 +6,17 @@ from elements import DictElement, Element, Leaf, Dict, List
 
 class Import(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class Imports(Element):
 
-    schema = List(type=Import, version='1_0')
+    schema = List(type=Import)
 
 
 class ImportsLoader(Element):
 
-    schema = List(type=Import, version='1_0')
+    schema = List(type=Import)
     provides = ['resource_base']
     requires = {
         'inputs': ['main_blueprint',

@@ -10,7 +10,7 @@ from elements import DictElement, Element, Leaf, Dict, List
 
 class NodeTemplateProperties(Element):
 
-    schema = Leaf(type=dict, version='1_0')
+    schema = Leaf(type=dict)
 
     def parse(self):
         return self.initial_value or {}
@@ -19,18 +19,18 @@ class NodeTemplateProperties(Element):
 class NodeTemplateRelationshipType(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class NodeTemplateRelationshipTarget(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class NodeTemplateRelationshipProperties(Element):
 
-    schema = Leaf(type=dict, version='1_0')
+    schema = Leaf(type=dict)
 
     def parse(self):
         return self.initial_value or {}
@@ -39,13 +39,13 @@ class NodeTemplateRelationshipProperties(Element):
 class NodeTemplateType(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class NodeTemplateInstancesDeploy(Element):
 
     # required = True
-    schema = Leaf(type=int, version='1_0')
+    schema = Leaf(type=int)
 
     def validate(self):
         if self.initial_value <= 0:
@@ -62,7 +62,6 @@ class NodeTemplateInstances(DictElement):
 
         'deploy': {
             'type': NodeTemplateInstancesDeploy,
-            'version': '1_0'
         }
 
     }
@@ -80,35 +79,29 @@ class NodeTemplateRelationship(DictElement):
 
         'type': {
             'type': NodeTemplateRelationshipType,
-            'version': '1_0',
         },
 
         'target': {
             'type': NodeTemplateRelationshipTarget,
-            'version': '1_0',
         },
 
         'properties': {
             'type': NodeTemplateRelationshipProperties,
-            'version': '1_0'
         },
 
         'source_interfaces': {
             'type': operation.NodeTemplateInterfaces,
-            'version': '1_0'
         },
 
         'target_interfaces': {
             'type': operation.NodeTemplateInterfaces,
-            'version': '1_0'
         }
     }
 
 
 class NodeTemplateRelationships(Element):
 
-    schema = List(type=NodeTemplateRelationship,
-                  version='1_0')
+    schema = List(type=NodeTemplateRelationship)
 
     def parse(self):
         return self.initial_value or []
@@ -120,27 +113,22 @@ class NodeTemplate(Element):
 
         'type': {
             'type': NodeTemplateType,
-            'version': '1_0'
         },
 
         'instances': {
             'type': NodeTemplateInstances,
-            'version': '1_0'
         },
 
         'interfaces': {
             'type': operation.NodeTemplateInterfaces,
-            'version': '1_0'
         },
 
         'relationships': {
             'type': NodeTemplateRelationships,
-            'version': '1_0'
         },
 
         'properties': {
             'type': NodeTemplateProperties,
-            'version': '1_0'
         }
 
     }
@@ -169,8 +157,7 @@ class NodeTemplate(Element):
 class NodeTemplates(Element):
 
     required = True
-    schema = Dict(type=NodeTemplate,
-                  version='1_0')
+    schema = Dict(type=NodeTemplate)
     requires = {
         'inputs': [parser.Requirement('resource_base', required=False)],
         _relationships.Relationships: [parser.Requirement('relationships',

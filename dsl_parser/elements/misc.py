@@ -29,14 +29,13 @@ class ToscaDefinitionsVersion(Element):
 
 class OutputDescription(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class OutputValue(Element):
 
     required = True
-    schema = Leaf(type=[list, bool, int, float, long, basestring, dict],
-                  version='1_0')
+    schema = Leaf(type=[list, bool, int, float, long, basestring, dict])
 
 
 class Output(Element):
@@ -45,12 +44,10 @@ class Output(Element):
 
         'description': {
             'type': OutputDescription,
-            'version': '1_0'
         },
 
         'value': {
             'type': OutputValue,
-            'version': '1_0'
         }
 
     }
@@ -58,8 +55,7 @@ class Output(Element):
 
 class Outputs(DictElement):
 
-    schema = Dict(type=Output,
-                  version='1_0')
+    schema = Dict(type=Output)
 
 
 class Inputs(properties.Schema):

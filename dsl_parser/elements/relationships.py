@@ -11,7 +11,7 @@ from elements import DictElement, Element, Leaf, Dict, List
 
 class DerivedFrom(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class Relationship(Element):
@@ -20,22 +20,18 @@ class Relationship(Element):
 
         'derived_from': {
             'type': DerivedFrom,
-            'version': '1_0'
         },
 
         'properties': {
             'type': properties.Schema,
-            'version': '1_0'
         },
 
         'source_interfaces': {
             'type': operation.NodeTypeInterfaces,
-            'version': '1_0'
         },
 
         'target_interfaces': {
             'type': operation.NodeTypeInterfaces,
-            'version': '1_0'
         }
     }
     requires = {
@@ -62,4 +58,4 @@ class Relationship(Element):
 
 class Relationships(DictElement):
 
-    schema = Dict(type=Relationship, version='1_0')
+    schema = Dict(type=Relationship)

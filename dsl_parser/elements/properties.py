@@ -5,18 +5,17 @@ from elements import DictElement, Element, Leaf, Dict, List
 
 class SchemaPropertyDefault(Element):
 
-    schema = Leaf(type=[list, bool, int, float, long, basestring, dict],
-                  version='1_0')
+    schema = Leaf(type=[list, bool, int, float, long, basestring, dict])
 
 
 class SchemaPropertyDescription(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class SchemaPropertyType(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
     def validate(self):
         if self.initial_value is None:
@@ -34,17 +33,14 @@ class SchemaProperty(Element):
 
         'default': {
             'type': SchemaPropertyDefault,
-            'version': '1_0'
         },
 
         'description': {
             'type': SchemaPropertyDescription,
-            'version': '1_0'
         },
 
         'type': {
             'type': SchemaPropertyType,
-            'version': '1_0'
         }
 
     }
@@ -52,4 +48,4 @@ class SchemaProperty(Element):
 
 class Schema(DictElement):
 
-    schema = Dict(type=SchemaProperty, version='1_0')
+    schema = Dict(type=SchemaProperty)

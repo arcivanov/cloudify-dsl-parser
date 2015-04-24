@@ -9,18 +9,17 @@ from elements import DictElement, Element, Leaf, Dict, List
 class WorkflowMapping(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class Workflow(Element):
 
     required = True
     schema = [
-        Leaf(type=str, version='1_0'),
+        Leaf(type=str),
         {
             'mapping': {
                 'type': WorkflowMapping,
-                'version': '1_0'
             },
 
             'parameters': {
@@ -48,7 +47,7 @@ class Workflow(Element):
 
 class Workflows(DictElement):
 
-    schema = Dict(type=Workflow, version='1_0')
+    schema = Dict(type=Workflow)
     requires = {
         _plugins.Plugins: [parser.Requirement('plugins', parsed=True)]
     }

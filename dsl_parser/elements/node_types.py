@@ -5,7 +5,7 @@ from elements import DictElement, Element, Leaf, Dict, List
 
 class DerivedFrom(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class NodeType(Element):
@@ -14,17 +14,14 @@ class NodeType(Element):
 
         'derived_from': {
             'type': DerivedFrom,
-            'version': '1_0'
         },
 
         'interfaces': {
             'type': operation.NodeTypeInterfaces,
-            'version': '1_0'
         },
 
         'properties': {
             'type': properties.Schema,
-            'version': '1_0'
         }
 
     }
@@ -32,5 +29,4 @@ class NodeType(Element):
 
 class NodeTypes(DictElement):
 
-    schema = Dict(type=NodeType,
-                  version='1_0')
+    schema = Dict(type=NodeType)

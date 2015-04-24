@@ -7,12 +7,12 @@ from elements import DictElement, Element, Leaf, Dict
 
 class OperationImplementation(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class OperationExecutor(Element):
 
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
     def validate(self):
         if self.initial_value is None:
@@ -34,12 +34,12 @@ class OperationExecutor(Element):
 
 class NodeTemplateOperationInputs(Element):
 
-    schema = Leaf(type=dict, version='1_0')
+    schema = Leaf(type=dict)
 
 
 class OperationMaxRetries(Element):
 
-    schema = Leaf(type=int, version='1_0')
+    schema = Leaf(type=int)
 
     def validate(self):
         value = self.initial_value
@@ -51,7 +51,7 @@ class OperationMaxRetries(Element):
 
 class OperationRetryInterval(Element):
 
-    schema = Leaf(type=(int, float, long), version='1_0')
+    schema = Leaf(type=(int, float, long))
 
     def validate(self):
         value = self.initial_value
@@ -67,32 +67,27 @@ class Operation(Element):
 class NodeTypeOperation(Operation):
 
     schema = [
-        Leaf(type=str, version='1_0'),
+        Leaf(type=str),
         {
             'implementation': {
                 'type': OperationImplementation,
-                'version': '1_0'
             },
 
             'inputs': {
                 'type': properties.Schema,
-                'version': '1_0',
             },
 
             'executor': {
                 'type': OperationExecutor,
-                'version': '1_0'
             },
 
             'max_retries': {
                 'type': OperationMaxRetries,
-                'version': '1_1',
-                },
+            },
 
             'retry_interval': {
                 'type': OperationRetryInterval,
-                'version': '1_1',
-                }
+            }
         }
     ]
 
@@ -100,31 +95,26 @@ class NodeTypeOperation(Operation):
 class NodeTemplateOperation(Operation):
 
     schema = [
-        Leaf(type=str, version='1_0'),
+        Leaf(type=str),
         {
             'implementation': {
                 'type': OperationImplementation,
-                'version': '1_0'
             },
 
             'inputs': {
                 'type': NodeTemplateOperationInputs,
-                'version': '1_0',
             },
 
             'executor': {
                 'type': OperationExecutor,
-                'version': '1_0'
             },
 
             'max_retries': {
                 'type': OperationMaxRetries,
-                'version': '1_1',
             },
 
             'retry_interval': {
                 'type': OperationRetryInterval,
-                'version': '1_1',
             }
         }
     ]
@@ -137,23 +127,19 @@ class Interface(DictElement):
 
 class NodeTemplateInterface(Interface):
 
-    schema = Dict(type=NodeTemplateOperation,
-                  version='1_0')
+    schema = Dict(type=NodeTemplateOperation)
 
 
 class NodeTemplateInterfaces(Element):
 
-    schema = Dict(type=NodeTemplateInterface,
-                  version='1_0')
+    schema = Dict(type=NodeTemplateInterface)
 
 
 class NodeTypeInterface(Interface):
 
-    schema = Dict(type=NodeTypeOperation,
-                  version='1_0')
+    schema = Dict(type=NodeTypeOperation)
 
 
 class NodeTypeInterfaces(Element):
 
-    schema = Dict(type=NodeTypeInterface,
-                  version='1_0')
+    schema = Dict(type=NodeTypeInterface)

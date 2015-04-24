@@ -10,7 +10,7 @@ from elements import DictElement, Element, Leaf, Dict, List
 class PolicyTriggerSource(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class PolicyTrigger(DictElement):
@@ -18,12 +18,10 @@ class PolicyTrigger(DictElement):
     schema = {
         'parameters': {
             'type': properties.Schema,
-            'version': '1_0'
         },
 
         'source': {
             'type': PolicyTriggerSource,
-            'version': '1_0'
         }
     }
 
@@ -31,7 +29,7 @@ class PolicyTrigger(DictElement):
 class PolicyTypeSource(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
 
 
 class PolicyType(DictElement):
@@ -39,12 +37,10 @@ class PolicyType(DictElement):
     schema = {
         'properties': {
             'type': properties.Schema,
-            'version': '1_0'
         },
 
         'source': {
             'type': PolicyTypeSource,
-            'version': '1_0'
         }
     }
 
@@ -62,7 +58,7 @@ class PolicyTriggers(DictElement):
 class GroupPolicyType(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
     requires = {
         PolicyTypes: [parser.Requirement('policy_types', parsed=True)]
     }
@@ -80,7 +76,7 @@ class GroupPolicyType(Element):
 
 class GroupPolicyProperties(Element):
 
-    schema = Leaf(type=dict, version='1_0')
+    schema = Leaf(type=dict)
     requires = {
         GroupPolicyType: [],
         PolicyTypes: [parser.Requirement('policy_types', parsed=True)]
@@ -105,7 +101,7 @@ class GroupPolicyProperties(Element):
 class GroupPolicyTriggerType(Element):
 
     required = True
-    schema = Leaf(type=str, version='1_0')
+    schema = Leaf(type=str)
     requires = {
         PolicyTriggers: [parser.Requirement('policy_triggers', parsed=True)]
     }
@@ -125,7 +121,7 @@ class GroupPolicyTriggerType(Element):
 
 class GroupPolicyTriggerParameters(Element):
 
-    schema = Leaf(type=dict, version='1_0')
+    schema = Leaf(type=dict)
     requires = {
         GroupPolicyTriggerType: [],
         PolicyTriggers: [parser.Requirement('policy_triggers', parsed=True)]
@@ -154,12 +150,10 @@ class GroupPolicyTrigger(DictElement):
     schema = {
         'type': {
             'type': GroupPolicyTriggerType,
-            'version': '1_0'
         },
 
         'parameters': {
             'type': GroupPolicyTriggerParameters,
-            'version': '1_0'
         }
 
     }
@@ -167,7 +161,7 @@ class GroupPolicyTrigger(DictElement):
 
 class GroupPolicyTriggers(DictElement):
 
-    schema = Dict(type=GroupPolicyTrigger, version='1_0')
+    schema = Dict(type=GroupPolicyTrigger)
 
 
 class GroupPolicy(DictElement):
@@ -176,17 +170,14 @@ class GroupPolicy(DictElement):
 
         'type': {
             'type': GroupPolicyType,
-            'version': '1_0'
         },
 
         'properties': {
             'type': GroupPolicyProperties,
-            'version': '1_0'
         },
 
         'triggers': {
             'type': GroupPolicyTriggers,
-            'version': '1_0'
         }
 
     }
@@ -195,7 +186,7 @@ class GroupPolicy(DictElement):
 class GroupMembers(Element):
 
     required = True
-    schema = Leaf(type=list, version='1_0')
+    schema = Leaf(type=list)
     requires = {
         node_templates.NodeTemplates: ['node_template_names']
     }
@@ -225,7 +216,7 @@ class GroupPolicies(DictElement):
 
     # TODO: validate at least one policy
     required = True
-    schema = Dict(type=GroupPolicy, version='1_0')
+    schema = Dict(type=GroupPolicy)
 
 
 class Group(DictElement):
@@ -233,12 +224,10 @@ class Group(DictElement):
     schema = {
         'members': {
             'type': GroupMembers,
-            'version': '1_0'
         },
 
         'policies': {
             'type': GroupPolicies,
-            'version': '1_0'
         }
     }
 

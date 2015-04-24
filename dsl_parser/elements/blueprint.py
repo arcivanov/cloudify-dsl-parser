@@ -19,7 +19,6 @@ class BlueprintVersionExtractor(Element):
     schema = {
         'tosca_definitions_version': {
             'type': misc.ToscaDefinitionsVersion,
-            'version': '1_0'
         }
     }
     requires = {
@@ -38,7 +37,6 @@ class BlueprintImporter(Element):
     schema = {
         'imports': {
             'type': imports.ImportsLoader,
-            'version': '1_0',
         },
     }
     requires = {
@@ -58,62 +56,50 @@ class Blueprint(Element):
 
         'tosca_definitions_version': {
             'type': misc.ToscaDefinitionsVersion,
-            'version': '1_0'
         },
 
         'imports': {
             'type': imports.Imports,
-            'version': '1_0',
         },
 
         'inputs': {
             'type': misc.Inputs,
-            'version': '1_0',
         },
 
         'plugins': {
             'type': plugins.Plugins,
-            'version': '1_0',
         },
 
         'node_types': {
             'type': node_types.NodeTypes,
-            'version': '1_0',
         },
 
         'relationships': {
             'type': relationships.Relationships,
-            'version': '1_0',
         },
 
         'node_templates': {
             'type': node_templates.NodeTemplates,
-            'version': '1_0',
         },
 
         'policy_types': {
             'type': policies.PolicyTypes,
-            'version': '1_0',
         },
 
         'policy_triggers': {
             'type': policies.PolicyTriggers,
-            'version': '1_0',
         },
 
         'groups': {
             'type': policies.Groups,
-            'version': '1_0'
         },
 
         'workflows': {
             'type': workflows.Workflows,
-            'version': '1_0',
         },
 
         'outputs': {
             'type': misc.Outputs,
-            'version': '1_0',
         }
 
     }
