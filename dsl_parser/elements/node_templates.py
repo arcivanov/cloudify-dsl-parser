@@ -58,6 +58,24 @@ class NodeTemplateRelationshipTarget(Element):
     required = True
     schema = Leaf(type=str)
 
+    def validate(self):
+        relationship_type = self.sibling(NodeTemplateRelationshipType).name
+        node_name = self.ancestor(NodeTemplate).name
+        node_template_names = self.ancestor(NodeTemplates).initial_value.keys()
+        if self.initial_value not in node_template_names:
+            raise exceptions.DSLParsingLogicException(
+                25, 'a relationship instance under node {0} of type {1} '
+                    'declares an undefined target node {2}'
+                    .format(node_name,
+                            relationship_type,
+                            self.initial_value))
+        if self.initial_value == node_name:
+            raise exceptions.DSLParsingLogicException(
+                23, 'a relationship instance under node {0} of type {1} '
+                    'illegally declares the source node as the target node'
+                    .format(node_name,
+                            relationship_type))
+
 
 class NodeTemplateRelationshipProperties(Element):
 

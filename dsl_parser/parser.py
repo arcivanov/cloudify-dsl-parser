@@ -693,25 +693,6 @@ def _process_node_relationships(node,
         relationships = []
         for relationship in node[RELATIONSHIPS]:
             relationship_type = relationship['type']
-            relationship['type'] = relationship_type
-            # validating only the instance relationship values - the inherited
-            # relationship values if any
-            # should have been validated when the top level relationships were
-            # processed.
-            # validate target field (done separately since it's only available
-            # in instance relationships)
-            if relationship['target'] not in node_names_set:
-                raise DSLParsingLogicException(
-                    25, 'a relationship instance under node {0} of type {1} '
-                        'declares an undefined target node {2}'
-                        .format(node_name, relationship_type,
-                                relationship['target']))
-            if relationship['target'] == node_name:
-                raise DSLParsingLogicException(
-                    23, 'a relationship instance under node {0} of type {1} '
-                        'illegally declares the source node as the target node'
-                        .format(node_name, relationship_type))
-
             # merge relationship instance with relationship type
             complete_relationship = relationship
 
