@@ -3,6 +3,7 @@ from dsl_parser import constants
 from dsl_parser import models
 from dsl_parser import functions
 
+import imports
 import misc
 import plugins
 import node_types
@@ -11,6 +12,44 @@ import relationships
 import workflows
 import policies
 from elements import Element
+
+
+class BlueprintVersionExtractor(Element):
+
+    schema = {
+        'tosca_definitions_version': {
+            'type': misc.ToscaDefinitionsVersion,
+            'version': '1_0'
+        }
+    }
+    requires = {
+        misc.ToscaDefinitionsVersion: ['version']
+    }
+
+    def parse(self, version):
+        return {
+            'version': self.child(misc.ToscaDefinitionsVersion).value,
+            'parsed_version': version
+        }
+
+
+class BlueprintImporter(Element):
+
+    schema = {
+        'imports': {
+            'type': imports.ImportsLoader,
+            'version': '1_0',
+        },
+    }
+    requires = {
+        imports.ImportsLoader: ['resource_base']
+    }
+
+    def parse(self, resource_base):
+        return {
+            'merged_blueprint': self.child(imports.ImportsLoader).value,
+            'resource_base': resource_base
+        }
 
 
 class Blueprint(Element):
@@ -23,7 +62,7 @@ class Blueprint(Element):
         },
 
         'imports': {
-            'type': misc.Imports,
+            'type': imports.Imports,
             'version': '1_0',
         },
 

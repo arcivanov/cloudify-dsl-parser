@@ -2,6 +2,7 @@ import pprint
 
 import yaml
 
+import blueprint
 import policies
 import plugins
 import operation
@@ -10,11 +11,12 @@ import elements
 from parser import Parser
 
 
-def test_element(element_cls, element_name, value):
+def test_element(element_cls, element_name, value, inputs=None):
     p = Parser(element_cls=element_cls,
                element_name=element_name)
-    context = p.parse(value)
-    pprint.pprint(context.element_graph.node)
+    context = p.parse(value, inputs=inputs)
+    # pprint.pprint(context.element_graph.node)
+    pprint.pprint(context.root_element.value)
 
 
 def test_plugins():
@@ -125,10 +127,47 @@ groups:
                  value=policies_obj)
 
 
+def test_version_extractor():
+    def test_version(version):
+        test_data = 'tosca_definitions_version: cloudify_dsl_{0}'.format(
+            version)
+
+        plugins_obj = yaml.load(test_data)
+        test_element(blueprint.BlueprintVersionExtractor,
+                     element_name='blueprint',
+                     value=plugins_obj)
+    test_version('1_0')
+    test_version('1_1')
+
+
+def test_blueprint_importer():
+    test_data = '''
+tosca_definitions_version: cloudify_dsl_1_0
+imports:
+    - file:///home/dan/dev/cloudify/cloudify-manager/resources/rest-service/cloudify/types/types.yaml
+    - http://www.getcloudify.org/spec/openstack-plugin/1.2rc1/plugin.yaml
+
+node_types:
+    type: {}
+
+'''
+    test_obj = yaml.load(test_data)
+    inputs = {
+        'main_blueprint': test_obj,
+        'resources_base_url': None,
+        'blueprint_location': 'file:///home/dan/dev/cloudify/cloudify-manager/blueprint.yaml'
+    }
+    test_element(blueprint.BlueprintImporter,
+                 element_name='blueprint_imports',
+                 value=test_obj, inputs=inputs)
+
+
 def test():
-    test_plugins()
-    test_node_template_interfaces()
-    test_policies()
+    # test_plugins()
+    # test_node_template_interfaces()
+    # test_policies()
+    # test_version_extractor()
+    test_blueprint_importer()
 
 if __name__ == '__main__':
     test()

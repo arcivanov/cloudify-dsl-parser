@@ -8,6 +8,7 @@ class ToscaDefinitionsVersion(Element):
 
     required = True
     schema = Leaf(type=str)
+    provides = ['version']
 
     def validate(self):
         version.validate_dsl_version(self.initial_value)
@@ -15,15 +16,10 @@ class ToscaDefinitionsVersion(Element):
     def parse(self):
         return version.process_dsl_version(self.initial_value)
 
-
-class Import(Element):
-
-    schema = Leaf(type=str, version='1_0')
-
-
-class Imports(Element):
-
-    schema = List(type=Import, version='1_0')
+    def calculate_provided(self):
+        return {
+            'version': version.parse_dsl_version(self.initial_value)
+        }
 
 
 class OutputDescription(Element):

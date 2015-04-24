@@ -23,7 +23,7 @@ class NodeType(Element):
         },
 
         'properties': {
-            'type': properties.NodeTypePropertiesSchema,
+            'type': properties.Schema,
             'version': '1_0'
         }
 

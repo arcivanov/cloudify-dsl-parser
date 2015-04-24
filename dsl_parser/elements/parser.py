@@ -175,7 +175,7 @@ class Parser(object):
                 pass
             elif required_type == 'inputs':
                 for input in requirements:
-                    if input.name not in context.input and input.required:
+                    if input.name not in context.inputs and input.required:
                         raise ValueError('Missing required input: {0}'.format(
                             input.name))
                     required_args[input.name] = context.inputs.get(input.name)
@@ -219,9 +219,18 @@ class Context(object):
     def __init__(self, parser, inputs):
         self.parser = parser
         self.inputs = inputs or {}
+        self._root_element = None
         self.element_tree = nx.DiGraph()
         self.element_graph = nx.DiGraph()
         self.element_type_to_elements = {}
+
+    @property
+    def root_element(self):
+        return self._root_element
+
+    @root_element.setter
+    def root_element(self, value):
+        self._root_element = value
 
     def add_element(self, element, parent=None):
         element_type = type(element)
@@ -232,6 +241,8 @@ class Context(object):
         self.element_tree.add_node(element)
         if parent:
             self.element_tree.add_edge(parent, element)
+        else:
+            self.root_element = element
 
     def calculate_element_graph(self):
         self.element_graph = nx.DiGraph(self.element_tree)
