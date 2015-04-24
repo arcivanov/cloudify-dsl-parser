@@ -65,7 +65,8 @@ class NodeTemplateType(Element):
 
     def validate(self, node_types):
         if self.initial_value not in node_types:
-            err_message = 'Could not locate node type: {0}; existing types: {1}' \
+            err_message = 'Could not locate node type: {0}; existing types: ' \
+                          '{1}' \
                 .format(self.initial_value,
                         node_types.keys())
             raise exceptions.DSLParsingLogicException(7, err_message)
