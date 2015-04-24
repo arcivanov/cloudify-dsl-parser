@@ -1,3 +1,5 @@
+import parser
+import relationships
 import operation
 from elements import Element, Leaf, Dict, List
 
@@ -110,6 +112,11 @@ class NodeTemplate(Element):
             'version': '1_0'
         }
 
+    }
+
+    requires = {
+        relationships.Relationships: [parser.Requirement('relationships',
+                                                         parsed=True)]
     }
 
 

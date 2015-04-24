@@ -126,11 +126,12 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
                                                         dsl_version))
                                  for (name, plugin) in plugins.items())
 
+        node_types = combined_parsed_dsl.get(NODE_TYPES, {})
         nodes = combined_parsed_dsl[NODE_TEMPLATES]
         node_names_set = set(nodes.keys())
         processed_nodes = [_process_node(node_name,
                                          node,
-                                         combined_parsed_dsl,
+                                         node_types,
                                          top_level_relationships,
                                          node_names_set,
                                          processed_plugins,
@@ -271,7 +272,7 @@ def _process_plugin(plugin, plugin_name, dsl_version):
 
 def _process_node(node_name,
                   node,
-                  parsed_dsl,
+                  node_types,
                   top_level_relationships,
                   node_names_set,
                   plugins,
@@ -282,18 +283,16 @@ def _process_node(node_name,
                       'type': node_type_name}
 
     # handle types
-    if NODE_TYPES not in parsed_dsl or node_type_name not in \
-            parsed_dsl[NODE_TYPES]:
+    if node_type_name not in node_types:
         err_message = 'Could not locate node type: {0}; existing types: {1}' \
             .format(node_type_name,
-                    parsed_dsl[NODE_TYPES].keys() if
-                    NODE_TYPES in parsed_dsl else 'None')
+                    node_types.keys())
         raise DSLParsingLogicException(7, err_message)
 
-    node_type = parsed_dsl[NODE_TYPES][node_type_name]
+    node_type = node_types[node_type_name]
     complete_node_type = _extract_complete_node(node_type,
                                                 node_type_name,
-                                                parsed_dsl[NODE_TYPES],
+                                                node_types,
                                                 node_name,
                                                 node)
     processed_node[PROPERTIES] = complete_node_type[PROPERTIES]
