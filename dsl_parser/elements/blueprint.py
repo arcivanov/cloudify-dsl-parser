@@ -15,8 +15,7 @@
 
 from dsl_parser import (parser,
                         constants,
-                        models,
-                        functions)
+                        models)
 from dsl_parser.elements import (imports,
                                  misc,
                                  plugins,
@@ -79,7 +78,7 @@ class Blueprint(Element):
     }
 
     def parse(self, workflow_plugins_to_install, plan_deployment_plugins):
-        plan = models.Plan({
+        return models.Plan({
             constants.NODES: self.child(node_templates.NodeTemplates).value,
             parser.RELATIONSHIPS: self.child(
                 relationships.Relationships).value,
@@ -93,5 +92,3 @@ class Blueprint(Element):
             constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
             constants.VERSION: self.child(misc.ToscaDefinitionsVersion).value
         })
-        functions.validate_functions(plan)
-        return plan

@@ -26,7 +26,8 @@ import yaml.parser
 
 from dsl_parser import (constants,
                         utils,
-                        version)
+                        version,
+                        functions)
 from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.exceptions import (DSLParsingFormatException,
                                    DSLParsingLogicException)
@@ -110,12 +111,15 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     merged_blueprint = result['merged_blueprint']
 
     # parse blueprint
-    return parser.parse(
+    plan = parser.parse(
         value=merged_blueprint,
         inputs={
             'resource_base': resource_base
         },
         element_cls=blueprint.Blueprint)
+
+    functions.validate_functions(plan)
+    return plan
 
 
 def _process_node(node_name,
