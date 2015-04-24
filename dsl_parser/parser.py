@@ -91,6 +91,11 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
 
     parser = Parser()
 
+    # validate and extract version
+    parser.parse(parsed_dsl,
+                 element_cls=blueprint.BlueprintVersionExtractor,
+                 strict=False)
+
     # handle imports
     result = parser.parse(
         value=parsed_dsl,
@@ -819,11 +824,6 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
                              POLICY_TYPES, GROUPS, POLICY_TRIGGERS])
 
     combined_parsed_dsl = copy.deepcopy(parsed_dsl)
-
-    if version.VERSION not in parsed_dsl:
-        raise DSLParsingLogicException(
-            27, '{0} field must appear in the main blueprint file'.format(
-                version.VERSION))
 
     if IMPORTS not in parsed_dsl:
         return combined_parsed_dsl

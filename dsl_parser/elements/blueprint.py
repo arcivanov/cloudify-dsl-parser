@@ -28,6 +28,19 @@ from dsl_parser.elements import (imports,
 from dsl_parser.elements.elements import Element
 
 
+class BlueprintVersionExtractor(Element):
+
+    schema = {
+        'tosca_definitions_version': misc.ToscaDefinitionsVersion
+    }
+    requires = {
+        misc.ToscaDefinitionsVersion: ['version']
+    }
+
+    def parse(self, version):
+        return version
+
+
 class BlueprintImporter(Element):
 
     schema = {
