@@ -147,15 +147,10 @@ class NodeTemplate(Element):
     }
 
     def parse(self, node_types, relationships, plugins, resource_base):
-        parsed_node = self.build_dict_result()
-        number_of_instances = parsed_node.get('instances', {}).get('deploy', 1)
-        parsed_node['number_of_instances'] = number_of_instances
-        parsed_node.pop('instances', None)
-
         node_names_set = set(self.ancestor(NodeTemplates).initial_value.keys())
         return old_parser._process_node(
             node_name=self.name,
-            node=parsed_node,
+            node=self.build_dict_result(),
             node_types=node_types,
             top_level_relationships=relationships,
             node_names_set=node_names_set,
