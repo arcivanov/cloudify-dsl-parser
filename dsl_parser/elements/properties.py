@@ -1,6 +1,6 @@
 from dsl_parser import exceptions
 
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict
 
 
 class SchemaPropertyDefault(Element):

@@ -1,7 +1,6 @@
-from dsl_parser.elements import parser
 from dsl_parser import parser as old_parser
 
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import Element, Leaf, List
 
 
 class Import(Element):

@@ -6,7 +6,7 @@ import plugins as _plugins
 import parser
 import properties
 import operation
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict
 
 
 class DerivedFrom(Element):
@@ -48,9 +48,10 @@ class Relationship(Element):
             relationship_types=self.ancestor(Relationships).initial_value
         )
 
-        old_parser._validate_relationship_fields(relationship_type, plugins,
-                                      relationship_type_name,
-                                      resource_base)
+        old_parser._validate_relationship_fields(
+            relationship_type, plugins,
+            relationship_type_name,
+            resource_base)
         complete_rel_obj_copy = copy.deepcopy(complete_relationship)
         complete_rel_obj_copy['name'] = relationship_type_name
         return complete_rel_obj_copy

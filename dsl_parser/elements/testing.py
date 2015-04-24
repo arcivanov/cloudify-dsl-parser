@@ -143,7 +143,7 @@ def test_blueprint_importer():
     test_data = '''
 tosca_definitions_version: cloudify_dsl_1_0
 imports:
-    - file:///home/dan/dev/cloudify/cloudify-manager/resources/rest-service/cloudify/types/types.yaml
+    - file:///home/dan/dev/cloudify/cloudify-manager/resources/rest-service/cloudify/types/types.yaml  # noqa
     - http://www.getcloudify.org/spec/openstack-plugin/1.2rc1/plugin.yaml
 
 node_types:
@@ -154,7 +154,8 @@ node_types:
     inputs = {
         'main_blueprint': test_obj,
         'resources_base_url': None,
-        'blueprint_location': 'file:///home/dan/dev/cloudify/cloudify-manager/blueprint.yaml'
+        'blueprint_location':
+            'file:///home/dan/dev/cloudify/cloudify-manager/blueprint.yaml'
     }
     test_element(blueprint.BlueprintImporter,
                  element_name='blueprint_imports',

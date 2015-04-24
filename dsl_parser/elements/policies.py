@@ -4,7 +4,7 @@ from dsl_parser import utils
 import parser
 import node_templates
 import properties
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict
 
 
 class PolicyTriggerSource(Element):

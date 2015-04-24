@@ -22,8 +22,6 @@ from dsl_parser.interfaces.operation_merger import (
 from dsl_parser.interfaces.constants import (INTERFACES,
                                              SOURCE_INTERFACES,
                                              TARGET_INTERFACES)
-from dsl_parser import (constants,
-                        exceptions)
 
 
 def merge_node_type_interfaces(overriding_node_type,

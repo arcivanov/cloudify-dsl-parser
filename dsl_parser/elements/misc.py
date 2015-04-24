@@ -2,7 +2,7 @@ from dsl_parser import version
 from dsl_parser import exceptions
 
 import properties
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict
 
 
 class ToscaDefinitionsVersion(Element):

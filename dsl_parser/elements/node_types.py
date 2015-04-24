@@ -1,6 +1,6 @@
 import operation
 import properties
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict
 
 
 class DerivedFrom(Element):

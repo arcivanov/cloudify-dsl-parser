@@ -1,9 +1,8 @@
 from dsl_parser import parser as old_parser
 import parser
 import plugins as _plugins
-import operation
 import properties
-from elements import DictElement, Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict
 
 
 class WorkflowMapping(Element):
