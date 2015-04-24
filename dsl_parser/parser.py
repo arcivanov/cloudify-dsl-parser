@@ -118,9 +118,6 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
         parsed_dsl_version = version.parse_dsl_version(dsl_version)
         parse_context.version = parsed_dsl_version
 
-        nodes = combined_parsed_dsl[NODE_TEMPLATES]
-        node_names_set = set(nodes.keys())
-
         top_level_relationships = _process_relationships(
             combined_parsed_dsl, resource_base)
 
@@ -129,6 +126,8 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
                                                         dsl_version))
                                  for (name, plugin) in plugins.items())
 
+        nodes = combined_parsed_dsl[NODE_TEMPLATES]
+        node_names_set = set(nodes.keys())
         processed_nodes = [_process_node(node_name,
                                          node,
                                          combined_parsed_dsl,
@@ -137,7 +136,6 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
                                          processed_plugins,
                                          resource_base)
                            for node_name, node in nodes.iteritems()]
-
         _post_process_nodes(processed_nodes,
                             combined_parsed_dsl.get(NODE_TYPES, {}),
                             combined_parsed_dsl.get(RELATIONSHIPS, {}),
