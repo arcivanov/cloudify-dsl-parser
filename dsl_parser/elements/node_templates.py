@@ -164,6 +164,7 @@ class NodeTemplate(Element):
 
 class NodeTemplates(Element):
 
+    required = True
     schema = Dict(type=NodeTemplate,
                   version='1_0')
     requires = {
