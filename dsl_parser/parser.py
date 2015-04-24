@@ -21,12 +21,10 @@ import contextlib
 import urllib
 import urllib2
 
-import jsonschema
 import yaml
 import yaml.parser
 
 from dsl_parser import (constants,
-                        schemas,
                         utils,
                         version)
 from dsl_parser.interfaces import interfaces_parser
@@ -836,7 +834,6 @@ def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
         return combined_parsed_dsl
 
     dsl_version = parsed_dsl[version.VERSION]
-    _validate_imports_section(parsed_dsl[IMPORTS], dsl_location)
 
     ordered_imports_list = []
     _build_ordered_imports_list(parsed_dsl, ordered_imports_list,
@@ -994,29 +991,6 @@ def _build_ordered_imports_list(parsed_dsl,
                     raise ex
 
     _build_ordered_imports_list_recursive(parsed_dsl, current_import)
-
-
-def _validate_dsl_schema(parsed_dsl):
-    try:
-        jsonschema.validate(parsed_dsl, schemas.DSL_SCHEMA)
-    except jsonschema.ValidationError, ex:
-        raise DSLParsingFormatException(
-            1, '{0}; Path to error: {1}'
-               .format(ex.message, '.'.join((str(x) for x in ex.path))))
-
-
-def _validate_imports_section(imports_section, dsl_location):
-    # imports section is validated separately from the main schema since it is
-    # validated for each file separately,
-    # while the standard validation runs only after combining all imports
-    # together
-    try:
-        jsonschema.validate(imports_section, schemas.IMPORTS_SCHEMA)
-    except jsonschema.ValidationError, ex:
-        raise DSLParsingFormatException(
-            2, 'Improper "imports" section in yaml {0}; {1}; Path to error: '
-               '{2}'.format(dsl_location, ex.message,
-                            '.'.join((str(x) for x in ex.path))))
 
 
 def _get_plugins_from_operations(node, processed_plugins):

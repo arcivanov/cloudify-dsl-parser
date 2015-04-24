@@ -13,7 +13,10 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-from dsl_parser import parser as old_parser
+import collections
+
+from dsl_parser import (exceptions,
+                        parser as old_parser)
 from dsl_parser.elements.elements import (Element,
                                           Leaf,
                                           List)
@@ -38,6 +41,15 @@ class ImportsLoader(Element):
                    'resources_base_url',
                    'blueprint_location']
     }
+
+    def validate(self, **kwargs):
+        imports = [i.value for i in self.children()]
+        counter = collections.Counter(imports)
+        for count in counter.values():
+            if count > 1:
+                raise exceptions.DSLParsingFormatException(
+                    2, 'Found duplicate imports in {0}'
+                       .format(imports))
 
     def parse(self,
               main_blueprint,

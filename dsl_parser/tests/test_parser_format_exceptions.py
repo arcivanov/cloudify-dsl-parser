@@ -272,7 +272,9 @@ node_types:
     def test_instance_relationships_relationship_without_type(self):
         yaml = self.MINIMAL_BLUEPRINT + """
         relationships:
-            -   target: "fake_node"
+            -   target: test_node2
+    test_node2:
+        type: test_type
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
