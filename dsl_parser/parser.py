@@ -276,22 +276,19 @@ def _process_node(node_name,
                   node_names_set,
                   plugins,
                   resource_base):
-    declared_node_type_name = node['type']
-    node_type_name = declared_node_type_name
+    node_type_name = node['type']
     processed_node = {'name': node_name,
                       'id': node_name,
-                      'declared_type': declared_node_type_name}
+                      'type': node_type_name}
 
     # handle types
-    if NODE_TYPES not in parsed_dsl or declared_node_type_name not in \
+    if NODE_TYPES not in parsed_dsl or node_type_name not in \
             parsed_dsl[NODE_TYPES]:
         err_message = 'Could not locate node type: {0}; existing types: {1}' \
-            .format(declared_node_type_name,
+            .format(node_type_name,
                     parsed_dsl[NODE_TYPES].keys() if
                     NODE_TYPES in parsed_dsl else 'None')
         raise DSLParsingLogicException(7, err_message)
-
-    processed_node['type'] = node_type_name
 
     node_type = parsed_dsl[NODE_TYPES][node_type_name]
     complete_node_type = _extract_complete_node(node_type,

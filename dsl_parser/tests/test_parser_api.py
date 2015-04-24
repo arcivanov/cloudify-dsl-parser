@@ -62,14 +62,12 @@ def workflow_op_struct(plugin_name,
 
 
 class TestParserApi(AbstractTestParser):
-    def _assert_minimal_blueprint(self, result, expected_type='test_type',
-                                  expected_declared_type='test_type'):
+    def _assert_minimal_blueprint(self, result, expected_type='test_type'):
         self.assertEquals(1, len(result['nodes']))
         node = result['nodes'][0]
         self.assertEquals('test_node', node['id'])
         self.assertEquals('test_node', node['name'])
         self.assertEquals(expected_type, node['type'])
-        self.assertEquals(expected_declared_type, node['declared_type'])
         self.assertEquals('val', node['properties']['key'])
         self.assertEquals(1, node['instances']['deploy'])
 
@@ -383,7 +381,6 @@ node_types:
         self.assertEquals('test_node', node['id'])
         self.assertEquals('test_node', node['name'])
         self.assertEquals('test_type', node['type'])
-        self.assertEquals('test_type', node['declared_type'])
 
     def test_type_properties_empty_property(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
@@ -398,7 +395,6 @@ node_types:
         self.assertEquals('test_node', node['id'])
         self.assertEquals('test_node', node['name'])
         self.assertEquals('test_type', node['type'])
-        self.assertEquals('test_type', node['declared_type'])
         self.assertEquals('val', node['properties']['key'])
         # TODO: assert node-type's default and description values once
         # 'node_types' is part of the parser's output
@@ -417,7 +413,6 @@ node_types:
         self.assertEquals('test_node', node['id'])
         self.assertEquals('test_node', node['name'])
         self.assertEquals('test_type', node['type'])
-        self.assertEquals('test_type', node['declared_type'])
         self.assertEquals('val', node['properties']['key'])
         # TODO: assert type's default and description values once 'type' is
         # part of the parser's output
@@ -438,7 +433,6 @@ node_types:
         self.assertEquals('test_node', node['id'])
         self.assertEquals('test_node', node['name'])
         self.assertEquals('test_type', node['type'])
-        self.assertEquals('test_type', node['declared_type'])
         self.assertEquals('val', node['properties']['key'])
         # TODO: assert type's default and description values once 'type' is
         # part of the parser's output
