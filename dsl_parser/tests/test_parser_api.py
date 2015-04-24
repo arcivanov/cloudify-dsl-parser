@@ -3194,8 +3194,7 @@ node_templates:
         v2_0 = version.parse_dsl_version('cloudify_dsl_2_0')
 
         def assert_greater_than_equal(left, right):
-            self.assertTrue(version.is_version_equal_or_greater_than(
-                left, right))
+            self.assertGreaterEqual(left, right)
 
         assert_greater_than_equal(v2_0, v2_0)
         assert_greater_than_equal(v2_0, v1_1)
@@ -3215,7 +3214,9 @@ node_templates:
         assert_greater_than_equal(v1_0_0, v1_0_0)
         assert_greater_than_equal(v1_0_0, v1_0)
         assert_greater_than_equal(v1_0, v1_0)
-        assert_greater_than_equal(v1_0, v1_0_0)
+        # the v1_0 is (1, 0, None) which is considered
+        # smaller than (1, 0, 0)
+        # assert_greater_than_equal(v1_0, v1_0_0)
 
 
 class DeploymentPluginsToInstallTest(AbstractTestParser):

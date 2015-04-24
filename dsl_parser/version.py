@@ -1,6 +1,6 @@
 import collections
 
-from exceptions import DSLParsingLogicException
+from dsl_parser.exceptions import DSLParsingLogicException
 
 VERSION = 'tosca_definitions_version'
 DSL_VERSION_PREFIX = 'cloudify_dsl_'
@@ -86,22 +86,5 @@ def process_dsl_version(dsl_version):
     }
 
 
-def is_version_equal_or_greater_than(version_found, version_required):
-
-    greater_or_equals = False
-
-    if version_found.major > version_required.major:
-        greater_or_equals = True
-    elif (version_found.major == version_required.major) \
-            and (version_found.minor > version_required.minor):
-        greater_or_equals = True
-    else:
-        # comparing micro version, need to treat None as 0
-        found_micro_as_int = version_found.micro or 0
-        required_micro_as_int = version_required.micro or 0
-        if (version_found.major == version_required.major) \
-                and (version_found.minor == version_required.minor) \
-                and (found_micro_as_int >= required_micro_as_int):
-            greater_or_equals = True
-
-    return greater_or_equals
+v1_0 = parse_dsl_version(DSL_VERSION_1_0)
+v1_1 = parse_dsl_version(DSL_VERSION_1_1)
