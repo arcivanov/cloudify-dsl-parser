@@ -1,6 +1,6 @@
 import operation
 import properties
-from elements import Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict, List
 
 
 class DerivedFrom(Element):
@@ -30,7 +30,7 @@ class NodeType(Element):
     }
 
 
-class NodeTypes(Element):
+class NodeTypes(DictElement):
 
     schema = Dict(type=NodeType,
                   version='1_0')

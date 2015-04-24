@@ -211,7 +211,7 @@ class Parser(object):
     def parse(self, value, inputs=None):
         context = self._init_element_context(value, inputs)
         self._iterate_elements(context)
-        return context
+        return context.root_element.value
 
 
 class Context(object):

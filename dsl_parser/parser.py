@@ -99,6 +99,37 @@ def parse(dsl_string, resources_base_url=None):
 
 
 def _parse(dsl_string, resources_base_url, dsl_location=None):
+    from dsl_parser.elements.parser import Parser
+    from dsl_parser.elements import blueprint
+
+    parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
+
+    try:
+        parser = Parser(blueprint.BlueprintVersionExtractor,
+                        element_name='version_extractor')
+        parsed_version = parser.parse(parsed_dsl)['parsed_version']
+        parse_context.version = parsed_version
+
+        parser = Parser(blueprint.BlueprintImporter,
+                        element_name='blueprint_importer')
+        result = parser.parse(parsed_dsl, inputs={
+            'main_blueprint': parsed_dsl,
+            'resources_base_url': resources_base_url,
+            'blueprint_location': dsl_location
+        })
+        resource_base = result['resource_base']
+        merged_blueprint = result['merged_blueprint']
+
+        parser = Parser(blueprint.Blueprint, element_name='blueprint')
+        return parser.parse(merged_blueprint, inputs={
+            'resource_base': resource_base
+        })
+
+    finally:
+        parse_context.clear()
+
+
+def _old_parse(dsl_string, resources_base_url, dsl_location=None):
     try:
         parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
 

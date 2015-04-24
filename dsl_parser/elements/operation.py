@@ -2,7 +2,7 @@ from dsl_parser import constants
 from dsl_parser import exceptions
 
 import properties
-from elements import Element, Leaf, Dict
+from elements import DictElement, Element, Leaf, Dict
 
 
 class OperationImplementation(Element):
@@ -18,8 +18,8 @@ class OperationExecutor(Element):
         if self.initial_value is None:
             return
         full_operation_name = '{0}.{1}'.format(
-            self.ancestor(NodeTemplateInterface).name,
-            self.ancestor(NodeTemplateOperation).name)
+            self.ancestor(Interface).name,
+            self.ancestor(Operation).name)
         value = self.initial_value
         valid_executors = [constants.CENTRAL_DEPLOYMENT_AGENT,
                            constants.HOST_AGENT]
@@ -60,7 +60,11 @@ class OperationRetryInterval(Element):
                              ' {1}.'.format(self.name, value))
 
 
-class NodeTypeOperation(Element):
+class Operation(Element):
+    pass
+
+
+class NodeTypeOperation(Operation):
 
     schema = [
         Leaf(type=str, version='1_0'),
@@ -93,7 +97,7 @@ class NodeTypeOperation(Element):
     ]
 
 
-class NodeTemplateOperation(Element):
+class NodeTemplateOperation(Operation):
 
     schema = [
         Leaf(type=str, version='1_0'),
@@ -126,7 +130,12 @@ class NodeTemplateOperation(Element):
     ]
 
 
-class NodeTemplateInterface(Element):
+class Interface(DictElement):
+
+    pass
+
+
+class NodeTemplateInterface(Interface):
 
     schema = Dict(type=NodeTemplateOperation,
                   version='1_0')
@@ -138,7 +147,7 @@ class NodeTemplateInterfaces(Element):
                   version='1_0')
 
 
-class NodeTypeInterface(Element):
+class NodeTypeInterface(Interface):
 
     schema = Dict(type=NodeTypeOperation,
                   version='1_0')

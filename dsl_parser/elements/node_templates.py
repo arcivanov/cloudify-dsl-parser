@@ -5,21 +5,26 @@ import node_types as _node_types
 import plugins as _plugins
 import relationships as _relationships
 import operation
-from elements import Element, Leaf, Dict, List
+from elements import DictElement, Element, Leaf, Dict, List
 
 
 class NodeTemplateProperties(Element):
 
     schema = Leaf(type=dict, version='1_0')
 
+    def parse(self):
+        return self.initial_value or {}
+
 
 class NodeTemplateRelationshipType(Element):
 
+    required = True
     schema = Leaf(type=str, version='1_0')
 
 
 class NodeTemplateRelationshipTarget(Element):
 
+    required = True
     schema = Leaf(type=str, version='1_0')
 
 
@@ -27,9 +32,13 @@ class NodeTemplateRelationshipProperties(Element):
 
     schema = Leaf(type=dict, version='1_0')
 
+    def parse(self):
+        return self.initial_value or {}
+
 
 class NodeTemplateType(Element):
 
+    required = True
     schema = Leaf(type=str, version='1_0')
 
 
@@ -37,8 +46,15 @@ class NodeTemplateInstancesDeploy(Element):
 
     schema = Leaf(type=int, version='1_0')
 
+    def validate(self):
+        if self.initial_value is not None and self.initial_value <= 0:
+            raise ValueError('deploy instances must be a positive number')
 
-class NodeTemplateInstances(Element):
+    def parse(self):
+        return self.initial_value if self.initial_value is not None else 1
+
+
+class NodeTemplateInstances(DictElement):
 
     schema = {
 
@@ -50,7 +66,7 @@ class NodeTemplateInstances(Element):
     }
 
 
-class NodeTemplateRelationship(Element):
+class NodeTemplateRelationship(DictElement):
 
     schema = {
 
@@ -85,6 +101,9 @@ class NodeTemplateRelationships(Element):
 
     schema = List(type=NodeTemplateRelationship,
                   version='1_0')
+
+    def parse(self):
+        return self.initial_value or []
 
 
 class NodeTemplate(Element):
@@ -128,10 +147,15 @@ class NodeTemplate(Element):
     }
 
     def parse(self, node_types, relationships, plugins, resource_base):
+        parsed_node = self.build_dict_result()
+        number_of_instances = parsed_node.get('instances', {}).get('deploy', 1)
+        parsed_node['number_of_instances'] = number_of_instances
+        parsed_node.pop('instances', None)
+
         node_names_set = set(self.ancestor(NodeTemplates).initial_value.keys())
         return old_parser._process_node(
             node_name=self.name,
-            node=self.initial_value,
+            node=parsed_node,
             node_types=node_types,
             top_level_relationships=relationships,
             node_names_set=node_names_set,

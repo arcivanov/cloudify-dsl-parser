@@ -14,9 +14,8 @@ from parser import Parser
 def test_element(element_cls, element_name, value, inputs=None):
     p = Parser(element_cls=element_cls,
                element_name=element_name)
-    context = p.parse(value, inputs=inputs)
-    # pprint.pprint(context.element_graph.node)
-    pprint.pprint(context.root_element.value)
+    result = p.parse(value, inputs=inputs)
+    pprint.pprint(result)
 
 
 def test_plugins():

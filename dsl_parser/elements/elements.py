@@ -69,7 +69,7 @@ class Element(object):
 
     def ancestor(self, element_type):
         matches = [e for e in self.context.ancestors_iter(self)
-                   if type(e) == element_type]
+                   if isinstance(e, element_type)]
         if not matches:
             raise ValueError('No matches found for {0}'.format(element_type))
         if len(matches) > 1:
@@ -79,7 +79,7 @@ class Element(object):
 
     def child(self, element_type):
         matches = [e for e in self.context.child_elements_iter(self)
-                   if type(e) == element_type]
+                   if isinstance(e, element_type)]
         if not matches:
             raise ValueError('No matches found for {0}'.format(element_type))
         if len(matches) > 1:
