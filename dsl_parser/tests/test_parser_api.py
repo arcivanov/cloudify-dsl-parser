@@ -3139,7 +3139,7 @@ node_templates:
         yaml_path = self.make_file_with_name(content=yaml,
                                              filename='blueprint.yaml')
         result = self.parse_from_path(yaml_path)
-        node = result['nodes'][0]
+        node = [n for n in result['nodes'] if n['name'] == 'node1'][0]
         relationship = node['relationships'][0]
 
         operation = node['operations']['test.op']

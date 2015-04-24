@@ -29,6 +29,7 @@ class OutputDescription(Element):
 
 class OutputValue(Element):
 
+    required = True
     schema = Leaf(type=[list, bool, int, float, long, basestring, dict],
                   version='1_0')
 

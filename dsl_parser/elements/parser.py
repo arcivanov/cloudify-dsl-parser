@@ -1,5 +1,7 @@
 import networkx as nx
 
+from dsl_parser import exceptions
+
 import elements
 
 
@@ -48,7 +50,7 @@ class Parser(object):
                                        parent_element=parent_element,
                                        context=context)
         else:
-            raise ValueError()
+            raise exceptions.DSLParsingFormatException(1)
 
     def _traverse_dict_schema(self, schema,  parent_element, context):
         if not parent_element:
@@ -91,7 +93,7 @@ class Parser(object):
                                            parent_element=parent_element,
                                            context=context)
         else:
-            raise ValueError()
+            raise exceptions.DSLParsingFormatException(1)
 
     def _traverse_list_schema(self, schema, parent_element, context):
         for schema_item in schema:
@@ -111,21 +113,24 @@ class Parser(object):
     def _validate_element(element, required_args):
         value = element.initial_value
         if element.required and value is None:
-            raise ValueError('Missing required value for {0}'
-                             .format(element.name))
+            raise exceptions.DSLParsingFormatException(
+                1,
+                'Missing required value for {0}'.format(element.name))
         if value is None:
             return
 
         def validate_schema(schema):
             if (isinstance(schema, (dict, elements.Dict)) and
                     not isinstance(value, dict)):
-                raise ValueError('Expected dict value for {0} but found {1}'
-                                 .format(element.name, value))
+                raise exceptions.DSLParsingFormatException(
+                    1, 'Expected dict value for {0} but found {1}'
+                       .format(element.name, value))
 
             if (isinstance(schema, elements.List) and
                     not isinstance(value, list)):
-                raise ValueError('Expected list value for {0} but found {1}'
-                                 .format(element.name, value))
+                raise exceptions.DSLParsingFormatException(
+                    1, 'Expected list value for {0} but found {1}'
+                       .format(element.name, value))
 
             if (isinstance(schema, elements.Leaf) and
                     not isinstance(value, schema.type)):
@@ -133,24 +138,26 @@ class Parser(object):
                     type_name = [t.__name__ for t in schema.type]
                 else:
                     type_name = schema.type.__name__
-                raise ValueError('Expected {0} value for {1} but found {2}'
-                                 .format(type_name,
-                                         element.name,
-                                         value))
+                raise exceptions.DSLParsingFormatException(
+                    1, 'Expected {0} value for {1} but found {2}'
+                       .format(type_name,
+                               element.name,
+                               value))
         if isinstance(element.schema, list):
             validated = False
             last_error = None
             for schema_item in element.schema:
                 try:
                     validate_schema(schema_item)
-                except ValueError as e:
+                except exceptions.DSLParsingFormatException as e:
                     last_error = e
                 else:
                     validated = True
                     break
             if not validated:
                 if not last_error:
-                    raise ValueError('Invalid list schema')
+                    raise exceptions.DSLParsingFormatException(
+                        1, 'Invalid list schema')
                 else:
                     raise last_error
         else:
@@ -176,8 +183,9 @@ class Parser(object):
             elif required_type == 'inputs':
                 for input in requirements:
                     if input.name not in context.inputs and input.required:
-                        raise ValueError('Missing required input: {0}'.format(
-                            input.name))
+                        raise exceptions.DSLParsingFormatException(
+                            1, 'Missing required input: {0}'.format(
+                                input.name))
                     required_args[input.name] = context.inputs.get(input.name)
             else:
                 required_type_elements = context.element_type_to_elements.get(
@@ -191,16 +199,18 @@ class Parser(object):
                             if (requirement.name not in
                                     required_element.provided):
                                 if requirement.required:
-                                    raise ValueError('Missing required value')
+                                    raise exceptions.DSLParsingFormatException(
+                                        1, 'Missing required value')
                                 else:
                                     continue
                             result.append(required_element.provided[
                                 requirement.name])
 
                     if len(result) != 1 and not requirement.multiple_results:
-                        raise ValueError('Expected exactly one result for'
-                                         'requirement: {0}'
-                                         .format(requirement.name))
+                        raise exceptions.DSLParsingFormatException(
+                            1, 'Expected exactly one result for'
+                               'requirement: {0}'
+                               .format(requirement.name))
 
                     if not requirement.multiple_results:
                         result = result[0]
@@ -273,8 +283,9 @@ class Context(object):
             if not predecessors:
                 return
             if len(predecessors) > 1:
-                raise ValueError('More than 1 parent found for {0}'
-                                 .format(element))
+                raise exceptions.DSLParsingFormatException(
+                    1, 'More than 1 parent found for {0}'
+                       .format(element))
             current_element = predecessors[0]
             yield current_element
 

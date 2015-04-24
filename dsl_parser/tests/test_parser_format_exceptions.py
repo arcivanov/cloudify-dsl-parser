@@ -180,7 +180,7 @@ node_types:
 imports: fake-file.yaml
         """
         self._assert_dsl_parsing_exception_error_code(
-            yaml, 2, DSLParsingFormatException)
+            yaml, 1, DSLParsingFormatException)
 
     def test_import_bad_syntax2(self):
         yaml = """
@@ -188,7 +188,7 @@ imports:
     first_file: fake-file.yaml
         """
         self._assert_dsl_parsing_exception_error_code(
-            yaml, 2, DSLParsingFormatException)
+            yaml, 1, DSLParsingFormatException)
 
     def test_import_bad_syntax3(self):
         yaml = """
@@ -196,7 +196,7 @@ imports:
     -   first_file: fake-file.yaml
         """
         self._assert_dsl_parsing_exception_error_code(
-            yaml, 2, DSLParsingFormatException)
+            yaml, 1, DSLParsingFormatException)
 
     def test_duplicate_import_in_same_file(self):
         yaml = """
