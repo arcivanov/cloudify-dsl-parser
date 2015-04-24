@@ -103,26 +103,35 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
 
     try:
-        parser = Parser(blueprint.BlueprintVersionExtractor,
-                        element_name='version_extractor')
-        parsed_version = parser.parse(parsed_dsl,
-                                      strict=False)['parsed_version']
+        parser = Parser()
+
+        # extract version
+        parsed_version = parser.parse(
+            value=parsed_dsl,
+            element_cls=blueprint.BlueprintVersionExtractor,
+            strict=False)['parsed_version']
         parse_context.version = parsed_version
 
-        parser = Parser(blueprint.BlueprintImporter,
-                        element_name='blueprint_importer')
-        result = parser.parse(parsed_dsl, inputs={
-            'main_blueprint': parsed_dsl,
-            'resources_base_url': resources_base_url,
-            'blueprint_location': dsl_location
-        }, strict=False)
+        # handle imports
+        result = parser.parse(
+            value=parsed_dsl,
+            inputs={
+                'main_blueprint': parsed_dsl,
+                'resources_base_url': resources_base_url,
+                'blueprint_location': dsl_location
+            },
+            element_cls=blueprint.BlueprintImporter,
+            strict=False)
         resource_base = result['resource_base']
         merged_blueprint = result['merged_blueprint']
 
-        parser = Parser(blueprint.Blueprint, element_name='blueprint')
-        return parser.parse(merged_blueprint, inputs={
-            'resource_base': resource_base
-        })
+        # parse blueprint
+        return parser.parse(
+            value=merged_blueprint,
+            inputs={
+                'resource_base': resource_base
+            },
+            element_cls=blueprint.Blueprint)
 
     finally:
         parse_context.clear()

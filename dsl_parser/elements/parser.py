@@ -7,14 +7,10 @@ import elements
 
 class Parser(object):
 
-    def __init__(self, element_cls, element_name):
-        self.element_cls = element_cls
-        self.element_name = element_name
-
-    def _init_element_context(self, value, inputs):
+    def _init_element_context(self, value, element_cls, element_name, inputs):
         context = Context(self, inputs)
-        self._traverse_element_cls(element_cls=self.element_cls,
-                                   name=self.element_name,
+        self._traverse_element_cls(element_cls=element_cls,
+                                   name=element_name,
                                    value=value,
                                    parent_element=None,
                                    context=context)
@@ -223,8 +219,17 @@ class Parser(object):
 
         return required_args
 
-    def parse(self, value, inputs=None, strict=True):
-        context = self._init_element_context(value, inputs)
+    def parse(self,
+              value,
+              element_cls,
+              element_name='root',
+              inputs=None,
+              strict=True):
+        context = self._init_element_context(
+            value=value,
+            element_cls=element_cls,
+            element_name=element_name,
+            inputs=inputs)
         self._iterate_elements(context, strict=strict)
         return context.root_element.value
 
