@@ -30,10 +30,11 @@ class ImportsLoader(Element):
               blueprint_location):
         self.resource_base = None
         if blueprint_location:
-            dsl_location = old_parser._dsl_location_to_url(
+            blueprint_location = old_parser._dsl_location_to_url(
                 blueprint_location,
                 resources_base_url)
-            self.resource_base = dsl_location[:dsl_location.rfind('/')]
+            slash_index = blueprint_location.rfind('/')
+            self.resource_base = blueprint_location[:slash_index]
         return old_parser._combine_imports(
             parsed_dsl=main_blueprint,
             dsl_location=blueprint_location,
