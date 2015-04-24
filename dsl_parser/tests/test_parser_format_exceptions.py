@@ -280,7 +280,9 @@ node_types:
     def test_instance_relationships_relationship_without_target(self):
         yaml = self.MINIMAL_BLUEPRINT + """
         relationships:
-            -   type: "fake_relationship"
+            -   type: relationship
+relationships:
+    relationship: {}
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
@@ -288,9 +290,13 @@ node_types:
     def test_instance_relationships_relationship_extra_prop(self):
         yaml = self.MINIMAL_BLUEPRINT + """
         relationships:
-            -   type: "fake_relationship"
-                target: "fake_node"
+            -   type: relationship
+                target: "test_node2"
                 extra_prop: "value"
+    test_node2:
+        type: test_type
+relationships:
+    relationship: {}
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
@@ -300,9 +306,13 @@ node_types:
         # definition
         yaml = self.MINIMAL_BLUEPRINT + """
         relationships:
-            -   type: "fake_relationship"
-                target: "fake_node"
+            -   type: relationship
+                target: test_node2
                 derived_from: "relationship"
+    test_node2:
+        type: test_type
+relationships:
+    relationship: {}
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)

@@ -45,6 +45,7 @@ class NodeTemplateRelationshipType(Element):
     }
 
     def validate(self, relationships):
+        return
         if self.initial_value not in relationships:
             raise exceptions.DSLParsingLogicException(
                 26, 'a relationship instance under node {0} declares an '
