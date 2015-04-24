@@ -138,7 +138,7 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
                                          resource_base)
                            for node_name, node in nodes.iteritems()]
         _post_process_nodes(processed_nodes,
-                            combined_parsed_dsl.get(NODE_TYPES, {}),
+                            node_types,
                             combined_parsed_dsl.get(RELATIONSHIPS, {}),
                             processed_plugins,
                             resource_base)

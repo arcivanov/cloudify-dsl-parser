@@ -119,22 +119,24 @@ class Blueprint(Element):
     }
 
     requires = {
+        node_templates.NodeTemplates: ['plan_deployment_plugins'],
         workflows.Workflows: ['workflow_plugins_to_install']
     }
 
-    def parse(self, workflow_plugins_to_install):
+    def parse(self, workflow_plugins_to_install, plan_deployment_plugins):
         plan = models.Plan({
-            # constants.NODES: processed_nodes,
-            # parser.RELATIONSHIPS: top_level_relationships,
+            constants.NODES: self.child(node_templates.NodeTemplates).value,
+            parser.RELATIONSHIPS: self.child(
+                relationships.Relationships).value,
             parser.WORKFLOWS: self.child(workflows.Workflows).value,
             parser.POLICY_TYPES: self.child(policies.PolicyTypes).value,
             parser.POLICY_TRIGGERS: self.child(policies.PolicyTriggers).value,
             parser.GROUPS: self.child(policies.Groups).value,
             parser.INPUTS: self.child(misc.Inputs).value,
             parser.OUTPUTS: self.child(misc.Outputs).value,
-            # constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
+            constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
             constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
-            # 'version': version.process_dsl_version(dsl_version)
+            'version': self.child(misc.ToscaDefinitionsVersion).value
         })
         functions.validate_functions(plan)
         return plan
