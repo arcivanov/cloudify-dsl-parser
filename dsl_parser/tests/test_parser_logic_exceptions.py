@@ -653,6 +653,8 @@ node_templates:
             .format(constants.PLUGIN_INSTALL_ARGUMENTS_KEY,
                     version.DSL_VERSION_1_1,
                     version.DSL_VERSION_1_0)
+        self._assert_dsl_parsing_exception_error_code(
+            yaml, 70, parsing_method=self.parse_1_0)
         self.assertRaisesRegex(DSLParsingLogicException,
                                expected_err_msg, self.parse, yaml,
                                dsl_version=self.BASIC_VERSION_SECTION_DSL_1_0)

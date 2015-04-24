@@ -14,7 +14,8 @@
 #    * limitations under the License.
 
 from dsl_parser import (version,
-                        exceptions)
+                        exceptions,
+                        models)
 from dsl_parser.elements import properties
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
@@ -36,7 +37,7 @@ class ToscaDefinitionsVersion(Element):
         version.validate_dsl_version(self.initial_value)
 
     def parse(self):
-        return version.process_dsl_version(self.initial_value)
+        return models.Version(version.process_dsl_version(self.initial_value))
 
     def calculate_provided(self):
         return {

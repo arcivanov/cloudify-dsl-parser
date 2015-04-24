@@ -14,8 +14,19 @@
 #    * limitations under the License.
 
 from dsl_parser.elements.parser import Parser
+from dsl_parser.elements.elements import Element
+from dsl_parser.elements import misc
 
 
 def validate(obj, element_cls):
+    class TestElement(Element):
+        schema = {
+            'tosca_definitions_version': misc.ToscaDefinitionsVersion,
+            'test': element_cls
+        }
+    obj = {
+        'tosca_definitions_version': 'cloudify_dsl_1_1',
+        'test': obj
+    }
     parser = Parser()
-    parser.parse(obj, element_cls=element_cls, strict=True)
+    parser.parse(obj, element_cls=TestElement, strict=True)

@@ -154,6 +154,10 @@ imports:"""
             dsl_string = dsl_version + dsl_string
         return dsl_parse(dsl_string, resources_base_url)
 
+    def parse_1_0(self, dsl_string, resources_base_url=None):
+        return self.parse(dsl_string, resources_base_url,
+                          dsl_version=self.BASIC_VERSION_SECTION_DSL_1_0)
+
     def parse_1_1(self, dsl_string, resources_base_url=None):
         return self.parse(dsl_string, resources_base_url,
                           dsl_version=self.BASIC_VERSION_SECTION_DSL_1_1)

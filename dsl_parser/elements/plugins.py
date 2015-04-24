@@ -14,7 +14,10 @@
 #    * limitations under the License.
 
 from dsl_parser import (constants,
-                        exceptions)
+                        exceptions,
+                        version as _version)
+from dsl_parser.elements.parser import Value
+from dsl_parser.elements import misc
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
                                           Leaf,
@@ -57,6 +60,23 @@ class PluginInstall(Element):
 class PluginInstallArguments(Element):
 
     schema = Leaf(type=str)
+    requires = {
+        misc.ToscaDefinitionsVersion: [Value('version')]
+    }
+
+    def validate(self, version):
+        value = self.initial_value
+        if value is None:
+            return
+        if version.definitions_version < (1, 1):
+            raise exceptions.DSLParsingLogicException(
+                70,
+                'plugin property "{0}" is not supported for {1} earlier than '
+                '"{2}". You are currently using version "{3}"'.format(
+                    self.name,
+                    _version.VERSION,
+                    _version.DSL_VERSION_1_1,
+                    version.raw))
 
 
 class Plugin(DictElement):
