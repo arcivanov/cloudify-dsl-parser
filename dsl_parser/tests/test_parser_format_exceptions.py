@@ -247,25 +247,6 @@ relationships:
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
 
-    def test_top_level_relationships_empty_interface(self):
-        yaml = self.MINIMAL_BLUEPRINT + """
-relationships:
-    test_relationship:
-        source_interfaces: {}
-                """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_top_level_relationships_interface_without_operations(self):
-        yaml = self.MINIMAL_BLUEPRINT + """
-relationships:
-    test_relationship:
-        source_interfaces:
-            my_interface: {}
-                """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
     def test_top_level_relationships_interface_with_operations_string(self):
         yaml = self.MINIMAL_BLUEPRINT + """
 relationships:

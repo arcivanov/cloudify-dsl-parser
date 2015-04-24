@@ -201,6 +201,10 @@ class GroupMembers(Element):
     }
 
     def validate(self, node_template_names):
+        if len(self.initial_value) < 1:
+            raise exceptions.DSLParsingFormatException(
+                1, "at least one member should be specified")
+
         for member in self.initial_value:
             if not isinstance(member, basestring):
                 raise exceptions.DSLParsingFormatException(
@@ -219,6 +223,8 @@ class GroupMembers(Element):
 
 class GroupPolicies(DictElement):
 
+    # TODO: validate at least one policy
+    required = True
     schema = Dict(type=GroupPolicy, version='1_0')
 
 
