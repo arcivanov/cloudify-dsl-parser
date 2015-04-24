@@ -44,12 +44,16 @@ class NodeTemplateType(Element):
 
 class NodeTemplateInstancesDeploy(Element):
 
-    required = True
+    # required = True
     schema = Leaf(type=int, version='1_0')
 
     def validate(self):
         if self.initial_value <= 0:
             raise ValueError('deploy instances must be a positive number')
+
+    @property
+    def required(self):
+        return True
 
 
 class NodeTemplateInstances(DictElement):

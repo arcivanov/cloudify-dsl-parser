@@ -328,7 +328,7 @@ node_types:
 
     def test_multiple_instances_without_deploy_property(self):
         yaml = self.MINIMAL_BLUEPRINT + """
-        instances:
+        instances: {}
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
