@@ -6,6 +6,12 @@ import properties
 from elements import DictElement, Element, Leaf, Dict, List
 
 
+class WorkflowMapping(Element):
+
+    required = True
+    schema = Leaf(type=str, version='1_0')
+
+
 class Workflow(Element):
 
     required = True
@@ -13,7 +19,7 @@ class Workflow(Element):
         Leaf(type=str, version='1_0'),
         {
             'mapping': {
-                'type': operation.OperationImplementation,
+                'type': WorkflowMapping,
                 'version': '1_0'
             },
 

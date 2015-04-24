@@ -56,13 +56,11 @@ node_templates:
             yaml, 1, DSLParsingFormatException)
 
     def test_name_field_under_node_templates(self):
-        yaml = """
+        yaml = self.MINIMAL_BLUEPRINT + """
 node_templates:
     name: my_blueprint
     test_node:
         type: test_type
-        properties:
-            key: "val"
         """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
@@ -114,16 +112,6 @@ node_templates:
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
 
-    def test_interface_with_no_operations(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
-node_types:
-    my_type:
-        interfaces:
-            my_interface: {}
-        """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
     def test_type_with_illegal_interface_declaration(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
 node_types:
@@ -153,15 +141,6 @@ node_types:
         interfaces:
             test_interface1:
                 a: 1 # key not a string
-            """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_type_with_empty_interfaces_declaration(self):
-        yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
-node_types:
-    test_type:
-        interfaces: {}
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
@@ -353,48 +332,6 @@ node_types:
                 type: "fake_relationship"
                 target: "fake_node"
                 derived_from: "relationship"
-            """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_instance_relationships_relationship_with_empty_source_interfaces(self):  # NOQA
-        yaml = self.MINIMAL_BLUEPRINT + """
-        relationships:
-            -   type: "fake_relationship"
-                target: "fake_node"
-                source_interfaces: {}
-            """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_instance_relationships_relationship_with_empty_target_interfaces(self):  # NOQA
-        yaml = self.MINIMAL_BLUEPRINT + """
-        relationships:
-            -   type: "fake_relationship"
-                target: "fake_node"
-                target_interfaces: {}
-            """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_instance_relationships_relationship_with_source_interface_without_operations(self):  # NOQA
-        yaml = self.MINIMAL_BLUEPRINT + """
-        relationships:
-            -   type: "fake_relationship"
-                target: "fake_node"
-                source_interfaces:
-                    my_interface: {}
-            """
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
-    def test_instance_relationships_relationship_with_target_interface_without_operations(self):  # NOQA
-        yaml = self.MINIMAL_BLUEPRINT + """
-        relationships:
-            -   type: "fake_relationship"
-                target: "fake_node"
-                target_interfaces:
-                    my_interface: {}
             """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
