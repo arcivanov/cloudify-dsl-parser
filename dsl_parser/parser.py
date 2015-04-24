@@ -711,13 +711,8 @@ def _process_node_relationships(node,
                     23, 'a relationship instance under node {0} of type {1} '
                         'illegally declares the source node as the target node'
                         .format(node_name, relationship_type))
-                # merge relationship instance with relationship type
-            if relationship_type not in top_level_relationships:
-                raise DSLParsingLogicException(
-                    26, 'a relationship instance under node {0} declares an '
-                        'undefined relationship type {1}'
-                        .format(node_name, relationship_type))
 
+            # merge relationship instance with relationship type
             complete_relationship = relationship
 
             relationship_complete_type = \

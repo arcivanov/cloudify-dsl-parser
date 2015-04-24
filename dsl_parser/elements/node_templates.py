@@ -39,6 +39,18 @@ class NodeTemplateRelationshipType(Element):
 
     required = True
     schema = Leaf(type=str)
+    requires = {
+        _relationships.Relationships: [parser.Requirement('relationships',
+                                                          parsed=True)]
+    }
+
+    def validate(self, relationships):
+        if self.initial_value not in relationships:
+            raise exceptions.DSLParsingLogicException(
+                26, 'a relationship instance under node {0} declares an '
+                    'undefined relationship type {1}'
+                    .format(self.ancestor(NodeTemplate).name,
+                            self.initial_value))
 
 
 class NodeTemplateRelationshipTarget(Element):
