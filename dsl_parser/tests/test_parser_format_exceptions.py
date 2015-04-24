@@ -372,15 +372,6 @@ workflows:
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
 
-    def test_workflow_mapping_no_parameters(self):
-        yaml = self.BLUEPRINT_WITH_INTERFACES_AND_PLUGINS + """
-workflows:
-    workflow1:
-        mapping: test_plugin.workflow1
-"""
-        self._assert_dsl_parsing_exception_error_code(
-            yaml, 1, DSLParsingFormatException)
-
     def test_workflow_parameters_simple_dictionary_schema_format(self):
         yaml = self.BLUEPRINT_WITH_INTERFACES_AND_PLUGINS + """
 workflows:
