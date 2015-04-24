@@ -44,14 +44,12 @@ class NodeTemplateType(Element):
 
 class NodeTemplateInstancesDeploy(Element):
 
+    required = True
     schema = Leaf(type=int, version='1_0')
 
     def validate(self):
-        if self.initial_value is not None and self.initial_value <= 0:
+        if self.initial_value <= 0:
             raise ValueError('deploy instances must be a positive number')
-
-    def parse(self):
-        return self.initial_value if self.initial_value is not None else 1
 
 
 class NodeTemplateInstances(DictElement):
@@ -64,6 +62,12 @@ class NodeTemplateInstances(DictElement):
         }
 
     }
+
+    def parse(self):
+        result = self.initial_value
+        if result is None:
+            result = {'deploy': 1}
+        return result
 
 
 class NodeTemplateRelationship(DictElement):

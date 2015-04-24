@@ -1957,14 +1957,10 @@ relationships:
                     inputs: {}
 """
         result = self.parse(yaml)
-        node = [n for n in result['nodes'] if n['name'] == 'test_node1']
-        plugin = result['nodes'][1]['plugins_to_install'][0]
+        node = [n for n in result['nodes'] if n['name'] == 'test_node1'][0]
+        plugin = node['plugins_to_install'][0]
         self.assertEquals('test_plugin', plugin['name'])
-        self.assertEquals(1, len(result['nodes'][1]['plugins_to_install']))
-
-        plugin = result['nodes'][1]['plugins'][0]
-        self.assertEquals('test_plugin', plugin['name'])
-        self.assertEquals(1, len(result['nodes'][1]['plugins']))
+        self.assertEquals(1, len(node['plugins_to_install']))
 
     def test_node_plugins_to_install_field_from_relationship(self):  # NOQA
         yaml = """
@@ -1994,9 +1990,10 @@ relationships:
                     inputs: {}
 """
         result = self.parse(yaml)
-        plugin = result['nodes'][1]['plugins_to_install'][0]
+        node = [n for n in result['nodes'] if n['name'] == 'test_node1'][0]
+        plugin = node['plugins_to_install'][0]
         self.assertEquals('test_plugin', plugin['name'])
-        self.assertEquals(1, len(result['nodes'][1]['plugins_to_install']))
+        self.assertEquals(1, len(node['plugins_to_install']))
 
     def test_node_plugins_to_install_field(self):
         yaml = """
