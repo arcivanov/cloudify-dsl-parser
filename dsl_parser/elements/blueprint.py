@@ -136,7 +136,7 @@ class Blueprint(Element):
             parser.OUTPUTS: self.child(misc.Outputs).value,
             constants.DEPLOYMENT_PLUGINS_TO_INSTALL: plan_deployment_plugins,
             constants.WORKFLOW_PLUGINS_TO_INSTALL: workflow_plugins_to_install,
-            'version': self.child(misc.ToscaDefinitionsVersion).value
+            constants.VERSION: self.child(misc.ToscaDefinitionsVersion).value
         })
         functions.validate_functions(plan)
         return plan
