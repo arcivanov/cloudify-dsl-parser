@@ -124,7 +124,7 @@ class NodeTemplateInstances(DictElement):
             return self.initial_value
 
 
-class NodeTemplateRelationship(DictElement):
+class NodeTemplateRelationship(Element):
 
     schema = {
         'type': NodeTemplateRelationshipType,
@@ -134,13 +134,24 @@ class NodeTemplateRelationship(DictElement):
         'target_interfaces': operation.NodeTemplateInterfaces,
     }
 
+    requires = {
+        _relationships.Relationships: [Value('relationships')],
+    }
+
+    def parse(self, relationships):
+        return old_parser._process_node_relationship(
+            relationship=self.build_dict_result(),
+            relationship_types=relationships,
+            node_name=self.ancestor(NodeTemplate).name)
+
 
 class NodeTemplateRelationships(Element):
 
     schema = List(type=NodeTemplateRelationship)
 
     def parse(self):
-        return self.initial_value or []
+        return [c.value for c in sorted(self.children(),
+                                        key=lambda child: child.name)]
 
 
 class NodeTemplate(Element):
@@ -154,17 +165,20 @@ class NodeTemplate(Element):
     }
     requires = {
         'inputs': [Requirement('resource_base', required=False)],
-        _relationships.Relationships: [Value('relationships')],
         _plugins.Plugins: [Value('plugins')],
         _node_types.NodeTypes: [Value('node_types')]
     }
 
-    def parse(self, node_types, relationships, plugins, resource_base):
+    def parse(self, node_types, plugins, resource_base):
+        node = self.build_dict_result()
+        node.update({
+            'name': self.name,
+            'id': self.name
+        })
         return old_parser._process_node(
             node_name=self.name,
-            node=self.build_dict_result(),
+            node=node,
             node_types=node_types,
-            top_level_relationships=relationships,
             plugins=plugins,
             resource_base=resource_base)
 

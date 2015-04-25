@@ -125,15 +125,8 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
 def _process_node(node_name,
                   node,
                   node_types,
-                  top_level_relationships,
                   plugins,
                   resource_base):
-
-    node.update({
-        'name': node_name,
-        'id': node_name
-    })
-
     node_type = node_types[node['type']]
 
     # handle properties
@@ -163,11 +156,6 @@ def _process_node(node_name,
         plugins,
         node, 10, resource_base)
     node['operations'] = operations
-
-    # handle relationships
-    node[RELATIONSHIPS] = _process_node_relationships(node,
-                                                      top_level_relationships)
-
     return node
 
 
@@ -654,45 +642,36 @@ def _resource_exists(resource_base, resource_name):
     return _validate_url_exists('{0}/{1}'.format(resource_base, resource_name))
 
 
-def _process_node_relationships(node,
-                                top_level_relationships):
-    relationships = []
-    for relationship in node[RELATIONSHIPS]:
-        relationship_type = relationship['type']
-        # merge relationship instance with relationship type
-        complete_relationship = relationship
-
-        relationship_complete_type = \
-            top_level_relationships[relationship_type]
-
-        source_and_target_interfaces = \
-            interfaces_parser.\
-            merge_relationship_type_and_instance_interfaces(
-                relationship_type=relationship_complete_type,
-                relationship_instance=relationship
-            )
-        source_interfaces = source_and_target_interfaces[SOURCE_INTERFACES]
-        complete_relationship[SOURCE_INTERFACES] = source_interfaces
-        target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
-        complete_relationship[TARGET_INTERFACES] = target_interfaces
-        complete_relationship[PROPERTIES] = \
-            utils.merge_schema_and_instance_properties(
-                relationship.get(PROPERTIES, {}),
-                relationship_complete_type.get(PROPERTIES, {}),
-                '{0} node relationship \'{1}\' property is not part of '
-                'the derived relationship type properties schema',
-                '{0} node relationship does not provide a '
-                'value for mandatory  '
-                '\'{1}\' property which is '
-                'part of its relationship type schema',
-                node_name=node['name']
-            )
-        complete_relationship['target_id'] = \
-            complete_relationship['target']
-        del (complete_relationship['target'])
-        complete_relationship['state'] = 'reachable'
-        relationships.append(complete_relationship)
-    return relationships
+def _process_node_relationship(relationship,
+                               relationship_types,
+                               node_name):
+    relationship_type = relationship_types[relationship['type']]
+    source_and_target_interfaces = \
+        interfaces_parser.\
+        merge_relationship_type_and_instance_interfaces(
+            relationship_type=relationship_type,
+            relationship_instance=relationship
+        )
+    source_interfaces = source_and_target_interfaces[SOURCE_INTERFACES]
+    relationship[SOURCE_INTERFACES] = source_interfaces
+    target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
+    relationship[TARGET_INTERFACES] = target_interfaces
+    relationship[PROPERTIES] = \
+        utils.merge_schema_and_instance_properties(
+            relationship.get(PROPERTIES, {}),
+            relationship_type.get(PROPERTIES, {}),
+            '{0} node relationship \'{1}\' property is not part of '
+            'the derived relationship type properties schema',
+            '{0} node relationship does not provide a '
+            'value for mandatory  '
+            '\'{1}\' property which is '
+            'part of its relationship type schema',
+            node_name=node_name
+        )
+    relationship['target_id'] = relationship['target']
+    del (relationship['target'])
+    relationship['state'] = 'reachable'
+    return relationship
 
 
 def _operation_struct(plugin_name,
