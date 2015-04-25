@@ -15,14 +15,14 @@
 
 from dsl_parser.elements import (operation,
                                  properties,
-                                 misc)
+                                 types)
 from dsl_parser.elements.elements import Dict
 
 
-class NodeType(misc.Type):
+class NodeType(types.Type):
 
     schema = {
-        'derived_from': misc.TypeDerivedFrom,
+        'derived_from': types.TypeDerivedFrom,
         'interfaces': operation.NodeTypeInterfaces,
         'properties': properties.Schema,
     }
@@ -34,6 +34,6 @@ class NodeType(misc.Type):
         return result
 
 
-class NodeTypes(misc.Types):
+class NodeTypes(types.Types):
 
     schema = Dict(type=NodeType)
