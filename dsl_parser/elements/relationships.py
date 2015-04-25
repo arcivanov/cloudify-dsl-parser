@@ -15,26 +15,19 @@
 
 import copy
 
-from dsl_parser import parser as old_parser
+from dsl_parser import (parser as old_parser)
 from dsl_parser.elements import (properties,
                                  operation,
-                                 plugins as _plugins)
+                                 plugins as _plugins,
+                                 misc)
 from dsl_parser.elements.parser import Value, Requirement
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf,
-                                          Dict)
+from dsl_parser.elements.elements import Dict
 
 
-class DerivedFrom(Element):
-
-    schema = Leaf(type=str)
-
-
-class Relationship(Element):
+class Relationship(misc.Type):
 
     schema = {
-        'derived_from': DerivedFrom,
+        'derived_from': misc.RelationshipDerivedFrom,
         'properties': properties.Schema,
         'source_interfaces': operation.NodeTypeInterfaces,
         'target_interfaces': operation.NodeTypeInterfaces,
@@ -64,6 +57,6 @@ class Relationship(Element):
         return complete_rel_obj_copy
 
 
-class Relationships(DictElement):
+class Relationships(misc.Types):
 
     schema = Dict(type=Relationship)

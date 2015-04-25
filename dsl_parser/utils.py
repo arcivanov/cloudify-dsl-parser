@@ -147,14 +147,6 @@ def extract_complete_type_recursive(dsl_type,
         return current_level_type
 
     super_type_name = current_level_type['derived_from']
-    if super_type_name not in dsl_container:
-        raise DSLParsingLogicException(
-            14, 'Missing definition for {0} {1} which is declared as derived '
-                'by {0} {2}'
-                .format('relationship' if is_relationships else 'type',
-                        super_type_name,
-                        dsl_type_name))
-
     super_type = dsl_container[super_type_name]
     complete_super_type = extract_complete_type_recursive(
         dsl_type=super_type,

@@ -14,22 +14,15 @@
 #    * limitations under the License.
 
 from dsl_parser.elements import (operation,
-                                 properties)
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf,
-                                          Dict)
+                                 properties,
+                                 misc)
+from dsl_parser.elements.elements import Dict
 
 
-class DerivedFrom(Element):
-
-    schema = Leaf(type=str)
-
-
-class NodeType(Element):
+class NodeType(misc.Type):
 
     schema = {
-        'derived_from': DerivedFrom,
+        'derived_from': misc.TypeDerivedFrom,
         'interfaces': operation.NodeTypeInterfaces,
         'properties': properties.Schema,
     }
@@ -41,6 +34,6 @@ class NodeType(Element):
         return result
 
 
-class NodeTypes(DictElement):
+class NodeTypes(misc.Types):
 
     schema = Dict(type=NodeType)
