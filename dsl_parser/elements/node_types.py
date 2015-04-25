@@ -34,6 +34,12 @@ class NodeType(Element):
         'properties': properties.Schema,
     }
 
+    def parse(self, **kwargs):
+        result = self.build_dict_result()
+        if not result.get('derived_from'):
+            result.pop('derived_from', None)
+        return result
+
 
 class NodeTypes(DictElement):
 

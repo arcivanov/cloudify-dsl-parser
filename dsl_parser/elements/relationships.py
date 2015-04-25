@@ -45,7 +45,9 @@ class Relationship(Element):
     }
 
     def parse(self, plugins, resource_base):
-        relationship_type = self.initial_value
+        relationship_type = self.build_dict_result()
+        if not relationship_type.get('derived_from'):
+            relationship_type.pop('derived_from', None)
         relationship_type_name = self.name
         complete_relationship = old_parser._extract_complete_relationship_type(
             relationship_type=relationship_type,

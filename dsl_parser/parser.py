@@ -476,20 +476,6 @@ def _node_type_interfaces_merging_function(overridden_node_type,
 def _extract_complete_relationship_type(relationship_types,
                                         relationship_type_name,
                                         relationship_type):
-
-    if 'derived_from' not in relationship_type:
-        # top level types do not undergo merge properly,
-        # which means the operations are not augmented.
-        # do so here
-        source_interfaces = relationship_type.get('source_interfaces', {})
-        for interface_name, interface in source_interfaces.iteritems():
-            for operation_name, operation in interface.iteritems():
-                _augment_operation(operation)
-        target_interfaces = relationship_type.get('target_interfaces', {})
-        for interface_name, interface in target_interfaces.iteritems():
-            for operation_name, operation in interface.iteritems():
-                _augment_operation(operation)
-
     return utils.extract_complete_type_recursive(
         dsl_type_name=relationship_type_name,
         dsl_type=relationship_type,
@@ -502,16 +488,6 @@ def _extract_complete_relationship_type(relationship_types,
 def _extract_complete_node_type(node_types,
                                 node_type_name,
                                 node_type):
-
-    if 'derived_from' not in node_type:
-        # top level types do not undergo merge properly,
-        # which means the operations are not augmented.
-        # do so here
-        interfaces = node_type.get('interfaces', {})
-        for interface_name, interface in interfaces.iteritems():
-            for operation_name, operation in interface.iteritems():
-                _augment_operation(operation)
-
     return utils.extract_complete_type_recursive(
         dsl_type_name=node_type_name,
         dsl_type=node_type,
@@ -519,23 +495,6 @@ def _extract_complete_node_type(node_types,
         is_relationships=False,
         merging_func=_node_type_interfaces_merging_function
     )
-
-
-def _augment_operation(operation):
-    if isinstance(operation, str):
-        operation = {
-            'implementation': operation
-        }
-    if 'executor' not in operation:
-        operation['executor'] = None
-    if 'implementation' not in operation:
-        operation['implementation'] = ''
-    if 'inputs' not in operation:
-        operation['inputs'] = {}
-    if 'max_retries' not in operation:
-        operation['max_retries'] = None
-    if 'retry_interval' not in operation:
-        operation['retry_interval'] = None
 
 
 def _extract_plugin_name_and_operation_mapping_from_operation(

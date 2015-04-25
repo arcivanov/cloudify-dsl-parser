@@ -27,6 +27,9 @@ class OperationImplementation(Element):
 
     schema = Leaf(type=str)
 
+    def parse(self):
+        return self.initial_value if self.initial_value is not None else ''
+
 
 class OperationExecutor(Element):
 
@@ -53,6 +56,9 @@ class OperationExecutor(Element):
 class NodeTemplateOperationInputs(Element):
 
     schema = Leaf(type=dict)
+
+    def parse(self):
+        return self.initial_value if self.initial_value is not None else {}
 
 
 class OperationMaxRetries(Element):
@@ -103,7 +109,18 @@ class OperationRetryInterval(Element):
 
 
 class Operation(Element):
-    pass
+
+    def parse(self):
+        if isinstance(self.initial_value, basestring):
+            return {
+                'implementation': self.initial_value,
+                'executor': None,
+                'inputs': {},
+                'max_retries': None,
+                'retry_interval': None
+            }
+        else:
+            return self.build_dict_result()
 
 
 class NodeTypeOperation(Operation):
@@ -143,7 +160,7 @@ class NodeTemplateInterface(Interface):
     schema = Dict(type=NodeTemplateOperation)
 
 
-class NodeTemplateInterfaces(Element):
+class NodeTemplateInterfaces(DictElement):
 
     schema = Dict(type=NodeTemplateInterface)
 
@@ -153,6 +170,6 @@ class NodeTypeInterface(Interface):
     schema = Dict(type=NodeTypeOperation)
 
 
-class NodeTypeInterfaces(Element):
+class NodeTypeInterfaces(DictElement):
 
     schema = Dict(type=NodeTypeInterface)
