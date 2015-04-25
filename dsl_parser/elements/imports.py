@@ -13,8 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import collections
-
 from dsl_parser import (exceptions,
                         parser as old_parser)
 from dsl_parser.elements.elements import (Element,
@@ -44,12 +42,13 @@ class ImportsLoader(Element):
 
     def validate(self, **kwargs):
         imports = [i.value for i in self.children()]
-        counter = collections.Counter(imports)
-        for count in counter.values():
-            if count > 1:
+        imports_set = set()
+        for _import in imports:
+            if _import in imports_set:
                 raise exceptions.DSLParsingFormatException(
                     2, 'Found duplicate imports in {0}'
                        .format(imports))
+            imports_set.add(_import)
 
     def parse(self,
               main_blueprint,
