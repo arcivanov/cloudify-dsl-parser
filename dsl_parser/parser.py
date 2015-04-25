@@ -129,16 +129,16 @@ def _process_node(node_name,
                   node_names_set,
                   plugins,
                   resource_base):
-    node_type_name = node['type']
-    processed_node = {'name': node_name,
-                      'id': node_name,
-                      'type': node_type_name,
-                      'instances': node['instances']}
 
-    node_type = node_types[node_type_name]
+    node.update({
+        'name': node_name,
+        'id': node_name
+    })
+
+    node_type = node_types[node['type']]
 
     # handle properties
-    processed_node[PROPERTIES] = utils.merge_schema_and_instance_properties(
+    node[PROPERTIES] = utils.merge_schema_and_instance_properties(
         node.get(PROPERTIES, {}),
         node_type.get(PROPERTIES, {}),
         '{0} node \'{1}\' property is not part of the derived'
@@ -155,21 +155,21 @@ def _process_node(node_name,
         node_template=node)
 
     # handle plugins and operations
-    processed_node[PLUGINS] = {}
+    node[PLUGINS] = {}
     partial_error_message = 'in node {0} of type {1}' \
-        .format(processed_node['id'], processed_node['type'])
+        .format(node['id'], node['type'])
     operations = _process_context_operations(
         partial_error_message,
         interfaces,
         plugins,
-        processed_node, 10, resource_base)
-    processed_node['operations'] = operations
+        node, 10, resource_base)
+    node['operations'] = operations
 
     # handle relationships
-    _process_node_relationships(node, node_name, node_names_set,
-                                processed_node, top_level_relationships)
+    node[RELATIONSHIPS] = _process_node_relationships(node,
+                                                      top_level_relationships)
 
-    return processed_node
+    return node
 
 
 def _post_process_nodes(processed_nodes,
@@ -656,49 +656,44 @@ def _resource_exists(resource_base, resource_name):
 
 
 def _process_node_relationships(node,
-                                node_name,
-                                node_names_set,
-                                processed_node,
                                 top_level_relationships):
-    if RELATIONSHIPS in node:
-        relationships = []
-        for relationship in node[RELATIONSHIPS]:
-            relationship_type = relationship['type']
-            # merge relationship instance with relationship type
-            complete_relationship = relationship
+    relationships = []
+    for relationship in node[RELATIONSHIPS]:
+        relationship_type = relationship['type']
+        # merge relationship instance with relationship type
+        complete_relationship = relationship
 
-            relationship_complete_type = \
-                top_level_relationships[relationship_type]
+        relationship_complete_type = \
+            top_level_relationships[relationship_type]
 
-            source_and_target_interfaces = \
-                interfaces_parser.\
-                merge_relationship_type_and_instance_interfaces(
-                    relationship_type=relationship_complete_type,
-                    relationship_instance=relationship
-                )
-            source_interfaces = source_and_target_interfaces[SOURCE_INTERFACES]
-            complete_relationship[SOURCE_INTERFACES] = source_interfaces
-            target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
-            complete_relationship[TARGET_INTERFACES] = target_interfaces
-            complete_relationship[PROPERTIES] = \
-                utils.merge_schema_and_instance_properties(
-                    relationship.get(PROPERTIES, {}),
-                    relationship_complete_type.get(PROPERTIES, {}),
-                    '{0} node relationship \'{1}\' property is not part of '
-                    'the derived relationship type properties schema',
-                    '{0} node relationship does not provide a '
-                    'value for mandatory  '
-                    '\'{1}\' property which is '
-                    'part of its relationship type schema',
-                    node_name=node_name
-                )
-            complete_relationship['target_id'] = \
-                complete_relationship['target']
-            del (complete_relationship['target'])
-            complete_relationship['state'] = 'reachable'
-            relationships.append(complete_relationship)
-
-        processed_node[RELATIONSHIPS] = relationships
+        source_and_target_interfaces = \
+            interfaces_parser.\
+            merge_relationship_type_and_instance_interfaces(
+                relationship_type=relationship_complete_type,
+                relationship_instance=relationship
+            )
+        source_interfaces = source_and_target_interfaces[SOURCE_INTERFACES]
+        complete_relationship[SOURCE_INTERFACES] = source_interfaces
+        target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
+        complete_relationship[TARGET_INTERFACES] = target_interfaces
+        complete_relationship[PROPERTIES] = \
+            utils.merge_schema_and_instance_properties(
+                relationship.get(PROPERTIES, {}),
+                relationship_complete_type.get(PROPERTIES, {}),
+                '{0} node relationship \'{1}\' property is not part of '
+                'the derived relationship type properties schema',
+                '{0} node relationship does not provide a '
+                'value for mandatory  '
+                '\'{1}\' property which is '
+                'part of its relationship type schema',
+                node_name=node['name']
+            )
+        complete_relationship['target_id'] = \
+            complete_relationship['target']
+        del (complete_relationship['target'])
+        complete_relationship['state'] = 'reachable'
+        relationships.append(complete_relationship)
+    return relationships
 
 
 def _operation_struct(plugin_name,
