@@ -126,7 +126,6 @@ def _process_node(node_name,
                   node,
                   node_types,
                   top_level_relationships,
-                  node_names_set,
                   plugins,
                   resource_base):
 

@@ -160,13 +160,11 @@ class NodeTemplate(Element):
     }
 
     def parse(self, node_types, relationships, plugins, resource_base):
-        node_names_set = set(self.ancestor(NodeTemplates).initial_value.keys())
         return old_parser._process_node(
             node_name=self.name,
             node=self.build_dict_result(),
             node_types=node_types,
             top_level_relationships=relationships,
-            node_names_set=node_names_set,
             plugins=plugins,
             resource_base=resource_base)
 
