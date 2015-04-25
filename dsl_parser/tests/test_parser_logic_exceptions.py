@@ -81,9 +81,9 @@ node_types:
     """
         ex = self._assert_dsl_parsing_exception_error_code(
             yaml, 100, DSLParsingLogicException)
-        expected_circular_dependency = ['test_type', 'test_type_parent',
-                                        'test_type_grandparent', 'test_type']
-        self.assertEquals(expected_circular_dependency, ex.circular_dependency)
+        circular = ex.circular_dependency
+        self.assertEqual(len(circular), 4)
+        self.assertEqual(circular[0], circular[-1])
 
     def test_plugin_with_wrongful_executor_field(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """

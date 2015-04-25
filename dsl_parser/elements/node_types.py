@@ -13,6 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+
+from dsl_parser import parser as old_parser
 from dsl_parser.elements import (operation,
                                  properties,
                                  types)
@@ -28,10 +30,13 @@ class NodeType(types.Type):
     }
 
     def parse(self, **kwargs):
-        result = self.build_dict_result()
-        if not result.get('derived_from'):
-            result.pop('derived_from', None)
-        return result
+        node_type = self.build_dict_result()
+        if not node_type.get('derived_from'):
+            node_type.pop('derived_from', None)
+        return old_parser._extract_complete_node_type(
+            node_types=self.ancestor(NodeTypes).initial_value,
+            node_type_name=self.name,
+            node_type=node_type)
 
 
 class NodeTypes(types.Types):

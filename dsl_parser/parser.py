@@ -135,25 +135,35 @@ def _process_node(node_name,
                       'type': node_type_name,
                       'instances': node['instances']}
 
-    # handle types
     node_type = node_types[node_type_name]
-    complete_node_type = _extract_complete_node(node_type,
-                                                node_type_name,
-                                                node_types,
-                                                node_name,
-                                                node)
-    processed_node[PROPERTIES] = complete_node_type[PROPERTIES]
-    processed_node[PLUGINS] = {}
+
+    # handle properties
+    processed_node[PROPERTIES] = utils.merge_schema_and_instance_properties(
+        node.get(PROPERTIES, {}),
+        node_type.get(PROPERTIES, {}),
+        '{0} node \'{1}\' property is not part of the derived'
+        ' type properties schema',
+        '{0} node does not provide a '
+        'value for mandatory  '
+        '\'{1}\' property which is '
+        'part of its type schema',
+        node_name=node_name
+    )
+
+    interfaces = interfaces_parser.merge_node_type_and_node_template_interfaces(  # noqa
+        node_type=node_type,
+        node_template=node)
+
     # handle plugins and operations
-    if INTERFACES in complete_node_type:
-        partial_error_message = 'in node {0} of type {1}' \
-            .format(processed_node['id'], processed_node['type'])
-        operations = _process_context_operations(
-            partial_error_message,
-            complete_node_type[INTERFACES],
-            plugins,
-            processed_node, 10, resource_base)
-        processed_node['operations'] = operations
+    processed_node[PLUGINS] = {}
+    partial_error_message = 'in node {0} of type {1}' \
+        .format(processed_node['id'], processed_node['type'])
+    operations = _process_context_operations(
+        partial_error_message,
+        interfaces,
+        plugins,
+        processed_node, 10, resource_base)
+    processed_node['operations'] = operations
 
     # handle relationships
     _process_node_relationships(node, node_name, node_names_set,
@@ -733,41 +743,6 @@ def _extract_node_host_id(processed_node,
                         node_name_to_node,
                         host_types,
                         contained_in_rel_types)
-
-
-def _extract_complete_node(node_type,
-                           node_type_name,
-                           node_types,
-                           node_name,
-                           node):
-
-    complete_type = _extract_complete_node_type(
-        node_type=node_type,
-        node_types=node_types,
-        node_type_name=node_type_name
-    )
-
-    complete_node = {
-        INTERFACES:
-        interfaces_parser.merge_node_type_and_node_template_interfaces(
-            node_type=complete_type,
-            node_template=node),
-        PROPERTIES: utils.merge_schema_and_instance_properties(
-            node.get(PROPERTIES, {}),
-            complete_type.get(PROPERTIES, {}),
-            '{0} node \'{1}\' property is not part of the derived'
-            ' type properties schema',
-            '{0} node does not provide a '
-            'value for mandatory  '
-            '\'{1}\' property which is '
-            'part of its type schema',
-            node_name=node_name
-        )
-    }
-
-    # merge schema and instance node properties
-
-    return complete_node
 
 
 def _combine_imports(parsed_dsl, dsl_location, resources_base_url):
