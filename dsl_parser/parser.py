@@ -122,26 +122,11 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     return plan
 
 
-def _process_node(node_name,
-                  node,
+def _process_node(node,
                   node_types,
                   plugins,
                   resource_base):
     node_type = node_types[node['type']]
-
-    # handle properties
-    node[PROPERTIES] = utils.merge_schema_and_instance_properties(
-        node.get(PROPERTIES, {}),
-        node_type.get(PROPERTIES, {}),
-        '{0} node \'{1}\' property is not part of the derived'
-        ' type properties schema',
-        '{0} node does not provide a '
-        'value for mandatory  '
-        '\'{1}\' property which is '
-        'part of its type schema',
-        node_name=node_name
-    )
-
     interfaces = interfaces_parser.merge_node_type_and_node_template_interfaces(  # noqa
         node_type=node_type,
         node_template=node)

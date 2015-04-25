@@ -14,7 +14,8 @@
 #    * limitations under the License.
 
 from dsl_parser import (exceptions,
-                        parser as old_parser)
+                        parser as old_parser,
+                        utils)
 from dsl_parser.elements import (node_types as _node_types,
                                  plugins as _plugins,
                                  relationships as _relationships,
@@ -27,12 +28,48 @@ from dsl_parser.elements.elements import (DictElement,
                                           List)
 
 
+class NodeTemplateType(Element):
+
+    required = True
+    schema = Leaf(type=str)
+    requires = {
+        _node_types.NodeTypes: [Value('node_types')]
+    }
+
+    def validate(self, node_types):
+        if self.initial_value not in node_types:
+            err_message = 'Could not locate node type: {0}; existing types: ' \
+                          '{1}' \
+                .format(self.initial_value,
+                        node_types.keys())
+            raise exceptions.DSLParsingLogicException(7, err_message)
+
+
 class NodeTemplateProperties(Element):
 
     schema = Leaf(type=dict)
+    requires = {
+        NodeTemplateType: [],
+        _node_types.NodeTypes: [Value('node_types')]
+    }
 
-    def parse(self):
-        return self.initial_value or {}
+    def parse(self, node_types):
+        properties = self.initial_value or {}
+        node_type_name = self.sibling(NodeTemplateType).value
+        # TODO fix exception tests so this workaround is not required
+        if node_type_name not in node_types:
+            return properties
+        node_type = node_types[node_type_name]
+        return utils.merge_schema_and_instance_properties(
+            properties,
+            node_type['properties'],
+            '{0} node \'{1}\' property is not part of the derived'
+            ' type properties schema',
+            '{0} node does not provide a '
+            'value for mandatory  '
+            '\'{1}\' property which is '
+            'part of its type schema',
+            node_name=self.ancestor(NodeTemplate).name)
 
 
 class NodeTemplateRelationshipType(Element):
@@ -82,23 +119,6 @@ class NodeTemplateRelationshipProperties(Element):
 
     def parse(self):
         return self.initial_value or {}
-
-
-class NodeTemplateType(Element):
-
-    required = True
-    schema = Leaf(type=str)
-    requires = {
-        _node_types.NodeTypes: [Value('node_types')]
-    }
-
-    def validate(self, node_types):
-        if self.initial_value not in node_types:
-            err_message = 'Could not locate node type: {0}; existing types: ' \
-                          '{1}' \
-                .format(self.initial_value,
-                        node_types.keys())
-            raise exceptions.DSLParsingLogicException(7, err_message)
 
 
 class NodeTemplateInstancesDeploy(Element):
@@ -176,7 +196,6 @@ class NodeTemplate(Element):
             'id': self.name
         })
         return old_parser._process_node(
-            node_name=self.name,
             node=node,
             node_types=node_types,
             plugins=plugins,

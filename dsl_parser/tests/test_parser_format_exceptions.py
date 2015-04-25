@@ -87,8 +87,6 @@ node_templates:
     test_node:
         name: my_node_name
         type: test_type
-        properties:
-            key: "val"
         """
         self._assert_dsl_parsing_exception_error_code(
             yaml, 1, DSLParsingFormatException)
