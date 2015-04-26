@@ -122,34 +122,31 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     return plan
 
 
-def _process_node(node,
-                  node_types,
-                  plugins,
-                  resource_base):
-    node_type = node_types[node['type']]
-    interfaces = interfaces_parser.merge_node_type_and_node_template_interfaces(  # noqa
-        node_type=node_type,
-        node_template=node)
-
-    # handle plugins and operations
-    node[PLUGINS] = {}
-    partial_error_message = 'in node {0} of type {1}' \
-        .format(node['id'], node['type'])
-    operations = _process_context_operations(
-        partial_error_message,
-        interfaces,
-        plugins,
-        node, 10, resource_base)
-    node['operations'] = operations
-    return node
-
-
 def _post_process_nodes(processed_nodes,
                         types,
                         relationships,
                         plugins,
                         resource_base):
     node_name_to_node = dict((node['id'], node) for node in processed_nodes)
+
+    # handle plugins and operations for all nodes
+    for node in processed_nodes:
+        node_type = types[node['type']]
+        interfaces = interfaces_parser.merge_node_type_and_node_template_interfaces(  # noqa
+            node_type=node_type,
+            node_template=node)
+
+        # handle plugins and operations
+        partial_error_message = 'in node {0} of type {1}' \
+            .format(node['id'], node['type'])
+        operations = _process_context_operations(
+            partial_error_message=partial_error_message,
+            interfaces=interfaces,
+            plugins=plugins,
+            node=node,
+            error_code=10,
+            resource_base=resource_base)
+        node['operations'] = operations
 
     depends_on_rel_types = _build_family_descendants_set(
         relationships, DEPENDS_ON_REL_TYPE)

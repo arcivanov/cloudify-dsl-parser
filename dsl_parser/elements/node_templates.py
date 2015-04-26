@@ -193,13 +193,10 @@ class NodeTemplate(Element):
         node = self.build_dict_result()
         node.update({
             'name': self.name,
-            'id': self.name
+            'id': self.name,
+            'plugins': {}
         })
-        return old_parser._process_node(
-            node=node,
-            node_types=node_types,
-            plugins=plugins,
-            resource_base=resource_base)
+        return node
 
 
 class NodeTemplates(Element):
