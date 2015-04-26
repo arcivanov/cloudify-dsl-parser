@@ -468,44 +468,31 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
         is_workflows=False):
     payload_field_name = 'parameters' if is_workflows else 'inputs'
     mapping_field_name = 'mapping' if is_workflows else 'implementation'
-    operation_payload = {}
-    operation_executor = None
-    operation_max_retries = None
-    operation_retry_interval = None
     if isinstance(operation_content, basestring):
-        operation_mapping = operation_content
-    else:
-        # top level types do not undergo proper merge
-        operation_mapping = operation_content.get(
-            mapping_field_name, '')
-        operation_payload = operation_content.get(
-            payload_field_name, {})
-        operation_executor = operation_content.get(
-            'executor', None)
-        operation_max_retries = operation_content.get(
-            'max_retries', None)
-        operation_retry_interval = operation_content.get(
-            'retry_interval', None)
+        operation_content = {
+            mapping_field_name: operation_content
+        }
+    operation_mapping = operation_content[mapping_field_name]
+    operation_payload = operation_content[payload_field_name]
+    operation_executor = operation_content.get('executor', None)
+    operation_max_retries = operation_content.get('max_retries', None)
+    operation_retry_interval = operation_content.get('retry_interval', None)
 
     if not operation_mapping:
         if is_workflows:
-            operation_struct = _workflow_operation_struct(
-                plugin_name='',
-                workflow_mapping='',
-                workflow_parameters={}
-            )
+            raise RuntimeError('Illegal state. workflow mapping should always'
+                               'be defined (enforced by schema validation)')
         else:
-            operation_struct = _operation_struct(
-                plugin_name='',
-                operation_mapping='',
-                operation_inputs={},
-                executor=None,
-                max_retries=None,
-                retry_interval=None
-            )
-        return OpDescriptor(name=operation_name,
-                            plugin='',
-                            op_struct=operation_struct)
+            return OpDescriptor(
+                name=operation_name,
+                plugin='',
+                op_struct=_operation_struct(
+                    plugin_name='',
+                    operation_mapping='',
+                    operation_inputs={},
+                    executor=None,
+                    max_retries=None,
+                    retry_interval=None))
 
     candidate_plugins = [p for p in plugins.keys()
                          if operation_mapping.startswith('{0}.'.format(p))]
@@ -519,8 +506,7 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
             operation_struct = _workflow_operation_struct(
                 plugin_name=plugin_name,
                 workflow_mapping=operation_mapping[len(plugin_name) + 1:],
-                workflow_parameters=operation_payload
-            )
+                workflow_parameters=operation_payload)
         else:
             operation_struct = _operation_struct(
                 plugin_name=plugin_name,
@@ -528,9 +514,7 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
                 operation_inputs=operation_payload,
                 executor=operation_executor,
                 max_retries=operation_max_retries,
-                retry_interval=operation_retry_interval
-            )
-
+                retry_interval=operation_retry_interval)
         return OpDescriptor(
             name=operation_name,
             plugin=plugins[plugin_name],
@@ -571,8 +555,7 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
             operation_struct = _workflow_operation_struct(
                 plugin_name=constants.SCRIPT_PLUGIN_NAME,
                 workflow_mapping=operation_mapping,
-                workflow_parameters=operation_payload
-            )
+                workflow_parameters=operation_payload)
         else:
             operation_struct = _operation_struct(
                 plugin_name=constants.SCRIPT_PLUGIN_NAME,
@@ -580,9 +563,7 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
                 operation_inputs=operation_payload,
                 executor=operation_executor,
                 max_retries=operation_max_retries,
-                retry_interval=operation_retry_interval
-            )
-
+                retry_interval=operation_retry_interval)
         return OpDescriptor(
             name=operation_name,
             plugin=plugins[constants.SCRIPT_PLUGIN_NAME],

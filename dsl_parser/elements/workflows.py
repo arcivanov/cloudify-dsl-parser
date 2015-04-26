@@ -45,11 +45,17 @@ class Workflow(Element):
     }
 
     def parse(self, plugins, resource_base):
+        if isinstance(self.initial_value, str):
+            operation_content = {'mapping': self.initial_value,
+                                 'parameters': {}}
+        else:
+            operation_content = self.build_dict_result()
+
         op_descriptor = \
             old_parser._extract_plugin_name_and_operation_mapping_from_operation(  # noqa
                 plugins=plugins,
                 operation_name=self.name,
-                operation_content=self.initial_value,
+                operation_content=operation_content,
                 error_code=21,
                 partial_error_message='',
                 resource_base=resource_base,
