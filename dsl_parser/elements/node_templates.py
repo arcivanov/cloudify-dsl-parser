@@ -117,9 +117,25 @@ class NodeTemplateRelationshipTarget(Element):
 class NodeTemplateRelationshipProperties(Element):
 
     schema = Leaf(type=dict)
+    requires = {
+        NodeTemplateRelationshipType: [],
+        _relationships.Relationships: [Value('relationships')],
+    }
 
-    def parse(self):
-        return self.initial_value or {}
+    def parse(self, relationships):
+        relationship_type_name = self.sibling(
+            NodeTemplateRelationshipType).value
+        properties = self.initial_value or {}
+        return utils.merge_schema_and_instance_properties(
+            properties,
+            relationships[relationship_type_name]['properties'],
+            '{0} node relationship \'{1}\' property is not part of '
+            'the derived relationship type properties schema',
+            '{0} node relationship does not provide a '
+            'value for mandatory  '
+            '\'{1}\' property which is '
+            'part of its relationship type schema',
+            node_name=self.ancestor(NodeTemplate).name)
 
 
 class NodeTemplateInstancesDeploy(Element):
@@ -162,8 +178,7 @@ class NodeTemplateRelationship(Element):
     def parse(self, relationships):
         return old_parser._process_node_relationship(
             relationship=self.build_dict_result(),
-            relationship_types=relationships,
-            node_name=self.ancestor(NodeTemplate).name)
+            relationship_types=relationships)
 
 
 class NodeTemplateRelationships(Element):

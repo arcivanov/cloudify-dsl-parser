@@ -607,8 +607,7 @@ def _resource_exists(resource_base, resource_name):
 
 
 def _process_node_relationship(relationship,
-                               relationship_types,
-                               node_name):
+                               relationship_types):
     relationship_type = relationship_types[relationship['type']]
     source_and_target_interfaces = \
         interfaces_parser.\
@@ -620,18 +619,6 @@ def _process_node_relationship(relationship,
     relationship[SOURCE_INTERFACES] = source_interfaces
     target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
     relationship[TARGET_INTERFACES] = target_interfaces
-    relationship[PROPERTIES] = \
-        utils.merge_schema_and_instance_properties(
-            relationship.get(PROPERTIES, {}),
-            relationship_type.get(PROPERTIES, {}),
-            '{0} node relationship \'{1}\' property is not part of '
-            'the derived relationship type properties schema',
-            '{0} node relationship does not provide a '
-            'value for mandatory  '
-            '\'{1}\' property which is '
-            'part of its relationship type schema',
-            node_name=node_name
-        )
     relationship['target_id'] = relationship['target']
     del (relationship['target'])
     relationship['state'] = 'reachable'
