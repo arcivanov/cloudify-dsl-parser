@@ -208,21 +208,6 @@ def _post_process_nodes(processed_nodes,
     _validate_agent_plugins_on_host_nodes(processed_nodes)
 
 
-def _create_plan_deployment_plugins(processed_nodes):
-    deployment_plugins = []
-    deployment_plugin_names = set()
-    for node in processed_nodes:
-        if constants.DEPLOYMENT_PLUGINS_TO_INSTALL in node:
-            for deployment_plugin in \
-                    node[constants.DEPLOYMENT_PLUGINS_TO_INSTALL]:
-                if deployment_plugin[constants.PLUGIN_NAME_KEY] \
-                        not in deployment_plugin_names:
-                    deployment_plugins.append(deployment_plugin)
-                    deployment_plugin_names \
-                        .add(deployment_plugin[constants.PLUGIN_NAME_KEY])
-    return deployment_plugins
-
-
 def _create_type_hierarchy(type_name, types):
     """
     Creates node types hierarchy as list where the last type in the list is

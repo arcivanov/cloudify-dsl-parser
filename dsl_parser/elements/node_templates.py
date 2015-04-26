@@ -15,7 +15,8 @@
 
 from dsl_parser import (exceptions,
                         parser as old_parser,
-                        utils)
+                        utils,
+                        constants)
 from dsl_parser.elements import (node_types as _node_types,
                                  plugins as _plugins,
                                  relationships as _relationships,
@@ -225,9 +226,21 @@ class NodeTemplates(Element):
         return processed_nodes
 
     def calculate_provided(self, **kwargs):
-        plan_deployment_plugins = old_parser._create_plan_deployment_plugins(
-            processed_nodes=self.value)
         return {
             'node_template_names': set(c.name for c in self.children()),
-            'plan_deployment_plugins': plan_deployment_plugins
+            'plan_deployment_plugins': self._create_plan_deployment_plugins()
         }
+
+    def _create_plan_deployment_plugins(self):
+        deployment_plugins = []
+        deployment_plugin_names = set()
+        for node in self.value:
+            if constants.DEPLOYMENT_PLUGINS_TO_INSTALL in node:
+                for deployment_plugin in \
+                        node[constants.DEPLOYMENT_PLUGINS_TO_INSTALL]:
+                    if deployment_plugin[constants.PLUGIN_NAME_KEY] \
+                            not in deployment_plugin_names:
+                        deployment_plugins.append(deployment_plugin)
+                        deployment_plugin_names \
+                            .add(deployment_plugin[constants.PLUGIN_NAME_KEY])
+        return deployment_plugins
