@@ -507,26 +507,24 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
                             plugin='',
                             op_struct=operation_struct)
 
-    longest_prefix = 0
-    longest_prefix_plugin_name = None
-    for plugin_name in plugins.keys():
-        if operation_mapping.startswith('{0}.'.format(plugin_name)):
-            plugin_name_length = len(plugin_name)
-            if plugin_name_length > longest_prefix:
-                longest_prefix = plugin_name_length
-                longest_prefix_plugin_name = plugin_name
-    if longest_prefix_plugin_name is not None:
-
+    candidate_plugins = [p for p in plugins.keys()
+                         if operation_mapping.startswith('{0}.'.format(p))]
+    if candidate_plugins:
+        if len(candidate_plugins) > 1:
+            raise DSLParsingLogicException(
+                91, 'Ambiguous operation mapping. [operation={0}, '
+                    'plugins={1}]'.format(operation_name, candidate_plugins))
+        plugin_name = candidate_plugins[0]
         if is_workflows:
             operation_struct = _workflow_operation_struct(
-                plugin_name=longest_prefix_plugin_name,
-                workflow_mapping=operation_mapping[longest_prefix + 1:],
+                plugin_name=plugin_name,
+                workflow_mapping=operation_mapping[len(plugin_name) + 1:],
                 workflow_parameters=operation_payload
             )
         else:
             operation_struct = _operation_struct(
-                plugin_name=longest_prefix_plugin_name,
-                operation_mapping=operation_mapping[longest_prefix + 1:],
+                plugin_name=plugin_name,
+                operation_mapping=operation_mapping[len(plugin_name) + 1:],
                 operation_inputs=operation_payload,
                 executor=operation_executor,
                 max_retries=operation_max_retries,
@@ -535,7 +533,7 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
 
         return OpDescriptor(
             name=operation_name,
-            plugin=plugins[longest_prefix_plugin_name],
+            plugin=plugins[plugin_name],
             op_struct=operation_struct)
     elif resource_base and _resource_exists(resource_base, operation_mapping):
         operation_payload = copy.deepcopy(operation_payload or {})

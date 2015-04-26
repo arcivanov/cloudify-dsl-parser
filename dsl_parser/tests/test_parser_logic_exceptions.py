@@ -305,6 +305,27 @@ plugins:
         self._assert_dsl_parsing_exception_error_code(
             yaml, 24, DSLParsingLogicException)
 
+    def test_ambiguous_plugin_operation_mapping(self):
+        yaml = """
+node_types:
+    test_type: {}
+node_templates:
+    test_node:
+        type: test_type
+        interfaces:
+            test_interface:
+                op: one.two.three.four
+plugins:
+    one.two:
+        executor: host_agent
+        source: dummy
+    one:
+        executor: host_agent
+        source: dummy
+        """
+        self._assert_dsl_parsing_exception_error_code(
+            yaml, 91, DSLParsingLogicException)
+
     def test_node_set_non_existing_property(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
 node_types:
