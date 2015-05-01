@@ -126,17 +126,12 @@ def _post_process_nodes(processed_nodes,
                         resource_base):
     # handle plugins and operations for all nodes
     for node in processed_nodes:
-        node_type = types[node['type']]
-        interfaces = interfaces_parser.merge_node_type_and_node_template_interfaces(  # noqa
-            node_type=node_type,
-            node_template=node)
-
         # handle plugins and operations
         partial_error_message = 'in node {0} of type {1}' \
             .format(node['id'], node['type'])
         operations = _process_context_operations(
             partial_error_message=partial_error_message,
-            interfaces=interfaces,
+            interfaces=node[INTERFACES],
             plugins=plugins,
             node=node,
             error_code=10,
@@ -199,15 +194,14 @@ def _post_process_node_relationships(processed_node,
                                      node_name_to_node,
                                      plugins,
                                      resource_base):
-    if RELATIONSHIPS in processed_node:
-        for relationship in processed_node[RELATIONSHIPS]:
-            target_node = node_name_to_node[relationship['target_id']]
-            _process_node_relationships_operations(
-                relationship, 'source_interfaces', 'source_operations',
-                processed_node, plugins, resource_base)
-            _process_node_relationships_operations(
-                relationship, 'target_interfaces', 'target_operations',
-                target_node, plugins, resource_base)
+    for relationship in processed_node[RELATIONSHIPS]:
+        target_node = node_name_to_node[relationship['target_id']]
+        _process_node_relationships_operations(
+            relationship, 'source_interfaces', 'source_operations',
+            processed_node, plugins, resource_base)
+        _process_node_relationships_operations(
+            relationship, 'target_interfaces', 'target_operations',
+            target_node, plugins, resource_base)
 
 
 def _process_context_operations(partial_error_message,
@@ -286,19 +280,18 @@ def _extract_plugin_names_and_operation_mapping_from_interface(
 
 def _validate_relationship_fields(rel_obj, plugins, rel_name, resource_base):
     for interfaces in [SOURCE_INTERFACES, TARGET_INTERFACES]:
-        if interfaces in rel_obj:
-            for interface_name, interface in rel_obj[interfaces].items():
-                _extract_plugin_names_and_operation_mapping_from_interface(
-                    interface,
-                    plugins,
-                    19,
-                    'Relationship: {0}'.format(rel_name),
-                    resource_base=resource_base)
+        for interface_name, interface in rel_obj[interfaces].items():
+            _extract_plugin_names_and_operation_mapping_from_interface(
+                interface,
+                plugins,
+                19,
+                'Relationship: {0}'.format(rel_name),
+                resource_base=resource_base)
 
 
 def _validate_agent_plugins_on_host_nodes(processed_nodes):
     for node in processed_nodes:
-        if 'host_id' not in node and PLUGINS in node:
+        if 'host_id' not in node:
             for plugin in node[PLUGINS]:
                 if plugin[constants.PLUGIN_EXECUTOR_KEY] \
                         == constants.HOST_AGENT:

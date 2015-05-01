@@ -244,13 +244,22 @@ class NodeTemplate(Element):
 
     def parse(self, node_types):
         node = self.build_dict_result()
+
+        node_type = node_types[self.child(NodeTemplateType).value]
+        interfaces = interfaces_parser.\
+            merge_node_type_and_node_template_interfaces(
+                node_type=node_type,
+                node_template=node)
+
         type_hierarchy = _create_type_hierarchy(
             type_name=self.child(NodeTemplateType).value,
             types=node_types)
+
         node.update({
             'name': self.name,
             'id': self.name,
             'plugins': {},
+            old_parser.INTERFACES: interfaces,
             old_parser.TYPE_HIERARCHY: type_hierarchy
         })
         return node
