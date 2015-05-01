@@ -151,7 +151,6 @@ def _post_process_nodes(processed_nodes,
         _post_process_node_relationships(node,
                                          node_name_to_node,
                                          plugins,
-                                         relationships,
                                          resource_base)
         node[TYPE_HIERARCHY] = _create_type_hierarchy(node['type'], types)
 
@@ -215,7 +214,6 @@ def _create_type_hierarchy(type_name, types):
 def _post_process_node_relationships(processed_node,
                                      node_name_to_node,
                                      plugins,
-                                     relationships,
                                      resource_base):
     if RELATIONSHIPS in processed_node:
         for relationship in processed_node[RELATIONSHIPS]:
@@ -226,8 +224,6 @@ def _post_process_node_relationships(processed_node,
             _process_node_relationships_operations(
                 relationship, 'target_interfaces', 'target_operations',
                 target_node, plugins, resource_base)
-            relationship[TYPE_HIERARCHY] = _create_type_hierarchy(
-                relationship['type'], relationships)
 
 
 def _process_context_operations(partial_error_message,
