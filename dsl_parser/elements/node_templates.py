@@ -179,7 +179,7 @@ class NodeTemplateRelationship(Element):
         result = old_parser._process_node_relationship(
             relationship=self.build_dict_result(),
             relationship_types=relationships)
-        result[old_parser.TYPE_HIERARCHY] = old_parser._create_type_hierarchy(
+        result[old_parser.TYPE_HIERARCHY] = _create_type_hierarchy(
             type_name=self.child(NodeTemplateRelationshipType).value,
             types=relationships)
         return result
@@ -234,7 +234,7 @@ class NodeTemplate(Element):
 
     def parse(self, node_types, plugins, resource_base):
         node = self.build_dict_result()
-        type_hierarchy = old_parser._create_type_hierarchy(
+        type_hierarchy = _create_type_hierarchy(
             type_name=self.child(NodeTemplateType).value,
             types=node_types)
         node.update({
@@ -290,3 +290,17 @@ class NodeTemplates(Element):
                         deployment_plugin_names \
                             .add(deployment_plugin[constants.PLUGIN_NAME_KEY])
         return deployment_plugins
+
+
+def _create_type_hierarchy(type_name, types):
+    """
+    Creates node types hierarchy as list where the last type in the list is
+    the actual node type.
+    """
+    current_type = types[type_name]
+    if 'derived_from' in current_type:
+        parent_type_name = current_type['derived_from']
+        types_hierarchy = _create_type_hierarchy(parent_type_name, types)
+        types_hierarchy.append(type_name)
+        return types_hierarchy
+    return [type_name]

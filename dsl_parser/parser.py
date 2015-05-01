@@ -196,20 +196,6 @@ def _post_process_nodes(processed_nodes,
     _validate_agent_plugins_on_host_nodes(processed_nodes)
 
 
-def _create_type_hierarchy(type_name, types):
-    """
-    Creates node types hierarchy as list where the last type in the list is
-    the actual node type.
-    """
-    current_type = types[type_name]
-    if 'derived_from' in current_type:
-        parent_type_name = current_type['derived_from']
-        types_hierarchy = _create_type_hierarchy(parent_type_name, types)
-        types_hierarchy.append(type_name)
-        return types_hierarchy
-    return [type_name]
-
-
 def _post_process_node_relationships(processed_node,
                                      node_name_to_node,
                                      plugins,
