@@ -17,6 +17,7 @@ from dsl_parser import (exceptions,
                         parser as old_parser,
                         utils,
                         constants)
+from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (node_types as _node_types,
                                  plugins as _plugins,
                                  relationships as _relationships,
@@ -176,12 +177,23 @@ class NodeTemplateRelationship(Element):
     }
 
     def parse(self, relationships):
-        result = old_parser._process_node_relationship(
-            relationship=self.build_dict_result(),
-            relationship_types=relationships)
+        result = self.build_dict_result()
+        relationship_type_name = self.child(NodeTemplateRelationshipType).value
+
+        relationship_type = relationships[relationship_type_name]
+        source_and_target_interfaces = interfaces_parser. \
+            merge_relationship_type_and_instance_interfaces(
+                relationship_type=relationship_type,
+                relationship_instance=result)
+        result.update(source_and_target_interfaces)
+
         result[old_parser.TYPE_HIERARCHY] = _create_type_hierarchy(
-            type_name=self.child(NodeTemplateRelationshipType).value,
+            type_name=relationship_type_name,
             types=relationships)
+
+        result['target_id'] = result['target']
+        del result['target']
+
         return result
 
 

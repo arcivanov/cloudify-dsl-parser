@@ -252,17 +252,16 @@ def _process_node_relationships_operations(relationship,
                                            node_for_plugins,
                                            plugins,
                                            resource_base):
-    if interfaces_attribute in relationship:
-        partial_error_message = 'in relationship of type {0} in node {1}'\
-                                .format(relationship['type'],
-                                        node_for_plugins['id'])
+    partial_error_message = 'in relationship of type {0} in node {1}'\
+                            .format(relationship['type'],
+                                    node_for_plugins['id'])
 
-        operations = _process_context_operations(
-            partial_error_message,
-            relationship[interfaces_attribute],
-            plugins, node_for_plugins, 19, resource_base)
+    operations = _process_context_operations(
+        partial_error_message,
+        relationship[interfaces_attribute],
+        plugins, node_for_plugins, 19, resource_base)
 
-        relationship[operations_attribute] = operations
+    relationship[operations_attribute] = operations
 
 
 def _extract_plugin_names_and_operation_mapping_from_interface(
@@ -410,6 +409,8 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
         }
     operation_mapping = operation_content[mapping_field_name]
     operation_payload = operation_content[payload_field_name]
+
+    # only for operations
     operation_executor = operation_content.get('executor', None)
     operation_max_retries = operation_content.get('max_retries', None)
     operation_retry_interval = operation_content.get('retry_interval', None)
@@ -438,15 +439,16 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
                 91, 'Ambiguous operation mapping. [operation={0}, '
                     'plugins={1}]'.format(operation_name, candidate_plugins))
         plugin_name = candidate_plugins[0]
+        mapping = operation_mapping[len(plugin_name) + 1:]
         if is_workflows:
             operation_struct = _workflow_operation_struct(
                 plugin_name=plugin_name,
-                workflow_mapping=operation_mapping[len(plugin_name) + 1:],
+                workflow_mapping=mapping,
                 workflow_parameters=operation_payload)
         else:
             operation_struct = _operation_struct(
                 plugin_name=plugin_name,
-                operation_mapping=operation_mapping[len(plugin_name) + 1:],
+                operation_mapping=mapping,
                 operation_inputs=operation_payload,
                 executor=operation_executor,
                 max_retries=operation_max_retries,
@@ -521,24 +523,6 @@ def _resource_exists(resource_base, resource_name):
     return _validate_url_exists('{0}/{1}'.format(resource_base, resource_name))
 
 
-def _process_node_relationship(relationship,
-                               relationship_types):
-    relationship_type = relationship_types[relationship['type']]
-    source_and_target_interfaces = \
-        interfaces_parser.\
-        merge_relationship_type_and_instance_interfaces(
-            relationship_type=relationship_type,
-            relationship_instance=relationship
-        )
-    source_interfaces = source_and_target_interfaces[SOURCE_INTERFACES]
-    relationship[SOURCE_INTERFACES] = source_interfaces
-    target_interfaces = source_and_target_interfaces[TARGET_INTERFACES]
-    relationship[TARGET_INTERFACES] = target_interfaces
-    relationship['target_id'] = relationship['target']
-    del (relationship['target'])
-    return relationship
-
-
 def _operation_struct(plugin_name,
                       operation_mapping,
                       operation_inputs,
@@ -573,14 +557,14 @@ def _extract_node_host_id(processed_node,
     if processed_node['type'] in host_types:
         return processed_node['id']
     else:
-        if RELATIONSHIPS in processed_node:
-            for rel in processed_node[RELATIONSHIPS]:
-                if rel['type'] in contained_in_rel_types:
-                    return _extract_node_host_id(
-                        node_name_to_node[rel['target_id']],
-                        node_name_to_node,
-                        host_types,
-                        contained_in_rel_types)
+        for rel in processed_node[RELATIONSHIPS]:
+            if rel['type'] in contained_in_rel_types:
+                return _extract_node_host_id(
+                    node_name_to_node[rel['target_id']],
+                    node_name_to_node,
+                    host_types,
+                    contained_in_rel_types)
+    return None
 
 
 def _load_yaml(yaml_stream, error_message):
@@ -603,15 +587,15 @@ def _validate_url_exists(url):
 def _get_plugins_from_operations(node, processed_plugins):
     added_plugins = set()
     plugins = []
-    node_operations = node.get('operations', {})
+    node_operations = node['operations']
     plugins_from_operations = _get_plugins_from_operations_helper(
         node_operations, processed_plugins)
     _add_plugins(plugins, plugins_from_operations, added_plugins)
-    plugins_from_node = node.get('plugins', {}).values()
+    plugins_from_node = node['plugins'].values()
     _add_plugins(plugins, plugins_from_node, added_plugins)
-    for relationship in node.get('relationships', []):
-        source_operations = relationship.get('source_operations', {})
-        target_operations = relationship.get('target_operations', {})
+    for relationship in node['relationships']:
+        source_operations = relationship['source_operations']
+        target_operations = relationship['target_operations']
         _set_operations_executor(target_operations, processed_plugins)
         _set_operations_executor(source_operations, processed_plugins)
     return plugins
