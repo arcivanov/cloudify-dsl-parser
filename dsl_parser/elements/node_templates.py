@@ -185,7 +185,31 @@ class NodeTemplateRelationships(Element):
 
     schema = List(type=NodeTemplateRelationship)
 
-    def parse(self):
+    requires = {
+        _relationships.Relationships: [Value('relationships')],
+    }
+
+    def validate(self, relationships):
+        relationship_types = [
+            r.child(NodeTemplateRelationshipType).value
+            for r in self.children()]
+        contained_in_relationships = [
+            rtype for rtype in relationship_types
+            if old_parser.CONTAINED_IN_REL_TYPE in
+            old_parser._create_type_hierarchy(type_name=rtype,
+                                              types=relationships)
+        ]
+        if len(contained_in_relationships) > 1:
+            ex = exceptions.DSLParsingLogicException(
+                112, 'Node {0} has more than one relationship that is derived'
+                     ' from {1} relationship. Found: {2}'
+                     .format(self.ancestor(NodeTemplate).name,
+                             old_parser.CONTAINED_IN_REL_TYPE,
+                             contained_in_relationships))
+            ex.relationship_types = contained_in_relationships
+            raise ex
+
+    def parse(self, **kwargs):
         return [c.value for c in sorted(self.children(),
                                         key=lambda child: child.name)]
 

@@ -145,19 +145,12 @@ def _post_process_nodes(processed_nodes,
             resource_base=resource_base)
         node['operations'] = operations
 
-    depends_on_rel_types = _build_family_descendants_set(
-        relationships, DEPENDS_ON_REL_TYPE)
     contained_in_rel_types = _build_family_descendants_set(
         relationships, CONTAINED_IN_REL_TYPE)
-    connected_to_rel_types = _build_family_descendants_set(
-        relationships, CONNECTED_TO_REL_TYPE)
     for node in processed_nodes:
         _post_process_node_relationships(node,
                                          node_name_to_node,
                                          plugins,
-                                         contained_in_rel_types,
-                                         connected_to_rel_types,
-                                         depends_on_rel_types,
                                          relationships,
                                          resource_base)
         node[TYPE_HIERARCHY] = _create_type_hierarchy(node['type'], types)
@@ -222,12 +215,8 @@ def _create_type_hierarchy(type_name, types):
 def _post_process_node_relationships(processed_node,
                                      node_name_to_node,
                                      plugins,
-                                     contained_in_rel_types,
-                                     connected_to_rel_types,
-                                     depends_on_rel_type,
                                      relationships,
                                      resource_base):
-    contained_in_relationships = []
     if RELATIONSHIPS in processed_node:
         for relationship in processed_node[RELATIONSHIPS]:
             target_node = node_name_to_node[relationship['target_id']]
@@ -237,41 +226,8 @@ def _post_process_node_relationships(processed_node,
             _process_node_relationships_operations(
                 relationship, 'target_interfaces', 'target_operations',
                 target_node, plugins, resource_base)
-            _add_base_type_to_relationship(relationship,
-                                           contained_in_rel_types,
-                                           connected_to_rel_types,
-                                           depends_on_rel_type,
-                                           contained_in_relationships)
             relationship[TYPE_HIERARCHY] = _create_type_hierarchy(
                 relationship['type'], relationships)
-
-    if len(contained_in_relationships) > 1:
-        ex = DSLParsingLogicException(
-            112, 'Node {0} has more than one relationship that is derived'
-                 ' from {1} relationship. Found: {2}'
-                 .format(processed_node['name'],
-                         CONTAINED_IN_REL_TYPE,
-                         contained_in_relationships))
-        ex.relationship_types = contained_in_relationships
-        raise ex
-
-
-# used in multi_instance
-def _add_base_type_to_relationship(relationship,
-                                   contained_in_rel_types,
-                                   connected_to_rel_types,
-                                   depends_on_rel_types,
-                                   contained_in_relationships):
-    base = 'undefined'
-    rel_type = relationship['type']
-    if rel_type in contained_in_rel_types:
-        base = 'contained'
-        contained_in_relationships.append(rel_type)
-    elif rel_type in connected_to_rel_types:
-        base = 'connected'
-    elif rel_type in depends_on_rel_types:
-        base = 'depends'
-    relationship['base'] = base
 
 
 def _process_context_operations(partial_error_message,

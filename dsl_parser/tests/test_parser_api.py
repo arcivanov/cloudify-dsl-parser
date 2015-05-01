@@ -305,67 +305,6 @@ node_types:
         node = result['nodes'][0]
         self.assertEquals('val2', node['properties']['key2'])
 
-    def test_instance_relationship_base_property(self):
-        yaml = self.MINIMAL_BLUEPRINT + """
-    test_node2:
-        type: test_type
-        relationships:
-            - type: cloudify.relationships.depends_on
-              target: test_node
-    test_node3:
-        type: test_type
-        relationships:
-            - type: cloudify.relationships.connected_to
-              target: test_node
-    test_node4:
-        type: test_type
-        relationships:
-            - type: derived_from_connected_to
-              target: test_node
-    test_node5:
-        type: test_type
-        relationships:
-            - type: cloudify.relationships.contained_in
-              target: test_node
-    test_node6:
-        type: test_type
-        relationships:
-            - type: derived_from_contained_in
-              target: test_node
-    test_node7:
-        type: test_type
-        relationships:
-            - type: test_relationship
-              target: test_node
-relationships:
-    test_relationship: {}
-    cloudify.relationships.depends_on: {}
-    cloudify.relationships.connected_to: {}
-    cloudify.relationships.contained_in: {}
-    derived_from_connected_to:
-        derived_from: cloudify.relationships.connected_to
-    derived_from_contained_in:
-        derived_from: cloudify.relationships.contained_in
-"""
-        result = self.parse(yaml)
-        self.assertEquals(7, len(result['nodes']))
-        nodes = self._sort_result_nodes(
-            result['nodes'],
-            ['test_node', 'test_node2', 'test_node3', 'test_node4',
-             'test_node5', 'test_node6', 'test_node7'])
-        n2_relationship = nodes[1]['relationships'][0]
-        n3_relationship = nodes[2]['relationships'][0]
-        n4_relationship = nodes[3]['relationships'][0]
-        n5_relationship = nodes[4]['relationships'][0]
-        n6_relationship = nodes[5]['relationships'][0]
-        n7_relationship = nodes[6]['relationships'][0]
-        self.assertEquals('depends', n2_relationship['base'])
-        self.assertEquals('connected', n3_relationship['base'])
-        self.assertEquals('connected', n4_relationship['base'])
-        self.assertEquals('contained', n5_relationship['base'])
-        self.assertEquals('contained', n6_relationship['base'])
-        self.assertEquals('undefined', n7_relationship['base'])
-
     def test_type_properties_empty_properties(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
 node_templates:
@@ -1142,7 +1081,7 @@ plugins:
             relationship_source_operations['test_interface1.install'])
         self.assertEqual(2, len(relationship_source_operations))
 
-        self.assertEquals(10, len(relationship))
+        self.assertEquals(9, len(relationship))
         plugin_def = nodes[1]['plugins'][0]
         self.assertEquals('test_plugin', plugin_def['name'])
 
@@ -1178,8 +1117,8 @@ relationships:
                           nodes[1]['relationships'][0]['state'])
         self.assertEquals('reachable',
                           nodes[1]['relationships'][1]['state'])
-        self.assertEquals(10, len(nodes[1]['relationships'][0]))
-        self.assertEquals(10, len(nodes[1]['relationships'][1]))
+        self.assertEquals(9, len(nodes[1]['relationships'][0]))
+        self.assertEquals(9, len(nodes[1]['relationships'][1]))
 
     def test_instance_relationships_relationship_inheritance(self):
         # possibly 'inheritance' is the wrong term to use here,
@@ -1251,7 +1190,7 @@ plugins:
                          rel_target_ops['interface2.op2'])
         self.assertEquals(2, len(rel_target_ops))
 
-        self.assertEquals(10, len(relationship))
+        self.assertEquals(9, len(relationship))
 
     def test_instance_relationship_properties_inheritance(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -1330,7 +1269,7 @@ plugins:
         self.assertEquals(2, len(result['relationships']))
         self.assertEquals(4, len(parent_relationship))
         self.assertEquals(5, len(relationship))
-        self.assertEquals(10, len(node_relationship))
+        self.assertEquals(9, len(node_relationship))
 
         self.assertEquals('parent_relationship', parent_relationship['name'])
         self.assertEquals(1, len(parent_relationship['target_interfaces']))
@@ -1496,7 +1435,7 @@ plugins:
         self.assertEquals(2, len(result['relationships']))
         self.assertEquals(4, len(parent_relationship))
         self.assertEquals(5, len(relationship))
-        self.assertEquals(10, len(node_relationship))
+        self.assertEquals(9, len(node_relationship))
 
         self.assertEquals('parent_relationship', parent_relationship['name'])
         self.assertEquals(1, len(parent_relationship['target_interfaces']))
@@ -2340,7 +2279,7 @@ plugins:
                                    executor='central_deployment_agent'),
                          rel1_source_ops['test_interface1.install'])
         self.assertEquals(2, len(rel1_source_ops))
-        self.assertEquals(10, len(relationship1))
+        self.assertEquals(9, len(relationship1))
         plugin1_def = nodes[1]['plugins'][0]
         self.assertEquals('test_plugin1', plugin1_def['name'])
 
@@ -2356,7 +2295,7 @@ plugins:
                                    executor='central_deployment_agent'),
                          rel2_source_ops['test_interface1.install'])
         self.assertEquals(2, len(rel2_source_ops))
-        self.assertEquals(10, len(relationship2))
+        self.assertEquals(9, len(relationship2))
 
         # expecting the other plugin to be under test_node rather than
         # test_node2:
