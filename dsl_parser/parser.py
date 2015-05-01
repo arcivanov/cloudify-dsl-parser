@@ -152,7 +152,6 @@ def _post_process_nodes(processed_nodes,
                                          node_name_to_node,
                                          plugins,
                                          resource_base)
-        node[TYPE_HIERARCHY] = _create_type_hierarchy(node['type'], types)
 
     # set host_id property to all relevant nodes
     host_types = _build_family_descendants_set(types, HOST_TYPE)
