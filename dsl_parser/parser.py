@@ -124,8 +124,6 @@ def _post_process_nodes(processed_nodes,
                         relationships,
                         plugins,
                         resource_base):
-    node_name_to_node = dict((node['id'], node) for node in processed_nodes)
-
     # handle plugins and operations for all nodes
     for node in processed_nodes:
         node_type = types[node['type']]
@@ -145,6 +143,7 @@ def _post_process_nodes(processed_nodes,
             resource_base=resource_base)
         node['operations'] = operations
 
+    node_name_to_node = dict((node['id'], node) for node in processed_nodes)
     contained_in_rel_types = _build_family_descendants_set(
         relationships, CONTAINED_IN_REL_TYPE)
     for node in processed_nodes:
@@ -537,7 +536,6 @@ def _process_node_relationship(relationship,
     relationship[TARGET_INTERFACES] = target_interfaces
     relationship['target_id'] = relationship['target']
     del (relationship['target'])
-    relationship['state'] = 'reachable'
     return relationship
 
 

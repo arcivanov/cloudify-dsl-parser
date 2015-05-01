@@ -1070,7 +1070,6 @@ plugins:
                               max_retries=None,
                               retry_interval=None),
             relationship['source_interfaces']['test_interface1']['install'])
-        self.assertEquals('reachable', relationship['state'])
         relationship_source_operations = relationship['source_operations']
         self.assertEqual(op_struct('test_plugin', 'install',
                                    executor='central_deployment_agent'),
@@ -1081,7 +1080,7 @@ plugins:
             relationship_source_operations['test_interface1.install'])
         self.assertEqual(2, len(relationship_source_operations))
 
-        self.assertEquals(9, len(relationship))
+        self.assertEquals(8, len(relationship))
         plugin_def = nodes[1]['plugins'][0]
         self.assertEquals('test_plugin', plugin_def['name'])
 
@@ -1113,12 +1112,8 @@ relationships:
                           nodes[1]['relationships'][0]['target_id'])
         self.assertEquals('test_node',
                           nodes[1]['relationships'][1]['target_id'])
-        self.assertEquals('reachable',
-                          nodes[1]['relationships'][0]['state'])
-        self.assertEquals('reachable',
-                          nodes[1]['relationships'][1]['state'])
-        self.assertEquals(9, len(nodes[1]['relationships'][0]))
-        self.assertEquals(9, len(nodes[1]['relationships'][1]))
+        self.assertEquals(8, len(nodes[1]['relationships'][0]))
+        self.assertEquals(8, len(nodes[1]['relationships'][1]))
 
     def test_instance_relationships_relationship_inheritance(self):
         # possibly 'inheritance' is the wrong term to use here,
@@ -1157,7 +1152,6 @@ plugins:
         relationship = nodes[1]['relationships'][0]
         self.assertEquals('test_relationship', relationship['type'])
         self.assertEquals('test_node', relationship['target_id'])
-        self.assertEquals('reachable', relationship['state'])
         self.assertEqual(
             operation_mapping(implementation='test_plugin.task_name1',
                               inputs={}, executor=None,
@@ -1190,7 +1184,7 @@ plugins:
                          rel_target_ops['interface2.op2'])
         self.assertEquals(2, len(rel_target_ops))
 
-        self.assertEquals(9, len(relationship))
+        self.assertEquals(8, len(relationship))
 
     def test_instance_relationship_properties_inheritance(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -1269,7 +1263,7 @@ plugins:
         self.assertEquals(2, len(result['relationships']))
         self.assertEquals(4, len(parent_relationship))
         self.assertEquals(5, len(relationship))
-        self.assertEquals(9, len(node_relationship))
+        self.assertEquals(8, len(node_relationship))
 
         self.assertEquals('parent_relationship', parent_relationship['name'])
         self.assertEquals(1, len(parent_relationship['target_interfaces']))
@@ -1309,7 +1303,6 @@ plugins:
 
         self.assertEquals('relationship', node_relationship['type'])
         self.assertEquals('test_node', node_relationship['target_id'])
-        self.assertEquals('reachable', node_relationship['state'])
         self.assertEquals(2, len(node_relationship['target_interfaces']))
         self.assertEquals(1, len(node_relationship['target_interfaces']
                                                   ['test_interface3']))
@@ -1435,7 +1428,7 @@ plugins:
         self.assertEquals(2, len(result['relationships']))
         self.assertEquals(4, len(parent_relationship))
         self.assertEquals(5, len(relationship))
-        self.assertEquals(9, len(node_relationship))
+        self.assertEquals(8, len(node_relationship))
 
         self.assertEquals('parent_relationship', parent_relationship['name'])
         self.assertEquals(1, len(parent_relationship['target_interfaces']))
@@ -1487,7 +1480,6 @@ plugins:
 
         self.assertEquals('relationship', node_relationship['type'])
         self.assertEquals('test_node', node_relationship['target_id'])
-        self.assertEquals('reachable', node_relationship['state'])
         self.assertEquals(1, len(node_relationship['target_interfaces']))
         self.assertEquals(
             3, len(node_relationship['target_interfaces']['test_interface']))
@@ -2270,7 +2262,6 @@ plugins:
         relationship1 = nodes[1]['relationships'][0]
         self.assertEquals('test_relationship', relationship1['type'])
         self.assertEquals('test_node', relationship1['target_id'])
-        self.assertEquals('reachable', relationship1['state'])
         rel1_source_ops = relationship1['source_operations']
         self.assertEqual(op_struct('test_plugin1', 'install',
                                    executor='central_deployment_agent'),
@@ -2279,14 +2270,13 @@ plugins:
                                    executor='central_deployment_agent'),
                          rel1_source_ops['test_interface1.install'])
         self.assertEquals(2, len(rel1_source_ops))
-        self.assertEquals(9, len(relationship1))
+        self.assertEquals(8, len(relationship1))
         plugin1_def = nodes[1]['plugins'][0]
         self.assertEquals('test_plugin1', plugin1_def['name'])
 
         relationship2 = nodes[1]['relationships'][1]
         self.assertEquals('test_relationship', relationship2['type'])
         self.assertEquals('test_node', relationship2['target_id'])
-        self.assertEquals('reachable', relationship2['state'])
         rel2_source_ops = relationship2['target_operations']
         self.assertEqual(op_struct('test_plugin2', 'install',
                                    executor='central_deployment_agent'),
@@ -2295,7 +2285,7 @@ plugins:
                                    executor='central_deployment_agent'),
                          rel2_source_ops['test_interface1.install'])
         self.assertEquals(2, len(rel2_source_ops))
-        self.assertEquals(9, len(relationship2))
+        self.assertEquals(8, len(relationship2))
 
         # expecting the other plugin to be under test_node rather than
         # test_node2:
