@@ -129,7 +129,7 @@ def _post_process_nodes(processed_nodes,
         # handle plugins and operations
         partial_error_message = 'in node {0} of type {1}' \
             .format(node['id'], node['type'])
-        operations = _process_context_operations(
+        operations = _process_operations(
             partial_error_message=partial_error_message,
             interfaces=node[INTERFACES],
             plugins=plugins,
@@ -204,11 +204,11 @@ def _post_process_node_relationships(processed_node,
             target_node, plugins, resource_base)
 
 
-def _process_context_operations(partial_error_message,
-                                interfaces, plugins,
-                                node,
-                                error_code,
-                                resource_base):
+def _process_operations(partial_error_message,
+                        interfaces, plugins,
+                        node,
+                        error_code,
+                        resource_base):
     operations = {}
     for interface_name, interface in interfaces.items():
         operation_mapping_context = \
@@ -250,10 +250,13 @@ def _process_node_relationships_operations(relationship,
                             .format(relationship['type'],
                                     node_for_plugins['id'])
 
-    operations = _process_context_operations(
-        partial_error_message,
-        relationship[interfaces_attribute],
-        plugins, node_for_plugins, 19, resource_base)
+    operations = _process_operations(
+        partial_error_message=partial_error_message,
+        interfaces=relationship[interfaces_attribute],
+        plugins=plugins,
+        node=node_for_plugins,
+        error_code=19,
+        resource_base=resource_base)
 
     relationship[operations_attribute] = operations
 
