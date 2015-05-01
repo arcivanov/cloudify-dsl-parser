@@ -227,12 +227,10 @@ class NodeTemplate(Element):
         'properties': NodeTemplateProperties,
     }
     requires = {
-        'inputs': [Requirement('resource_base', required=False)],
-        _plugins.Plugins: [Value('plugins')],
         _node_types.NodeTypes: [Value('node_types')]
     }
 
-    def parse(self, node_types, plugins, resource_base):
+    def parse(self, node_types):
         node = self.build_dict_result()
         type_hierarchy = _create_type_hierarchy(
             type_name=self.child(NodeTemplateType).value,
