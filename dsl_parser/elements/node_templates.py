@@ -13,6 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+import copy
+
 from dsl_parser import (exceptions,
                         parser as old_parser,
                         utils,
@@ -21,7 +23,7 @@ from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (node_types as _node_types,
                                  plugins as _plugins,
                                  relationships as _relationships,
-                                 operation)
+                                 operation as _operation)
 from dsl_parser.elements.parser import Value, Requirement
 from dsl_parser.elements.elements import (DictElement,
                                           Element,
@@ -168,8 +170,8 @@ class NodeTemplateRelationship(Element):
         'type': NodeTemplateRelationshipType,
         'target': NodeTemplateRelationshipTarget,
         'properties': NodeTemplateRelationshipProperties,
-        'source_interfaces': operation.NodeTemplateInterfaces,
-        'target_interfaces': operation.NodeTemplateInterfaces,
+        'source_interfaces': _operation.NodeTemplateInterfaces,
+        'target_interfaces': _operation.NodeTemplateInterfaces,
     }
 
     requires = {
@@ -234,7 +236,7 @@ class NodeTemplate(Element):
     schema = {
         'type': NodeTemplateType,
         'instances': NodeTemplateInstances,
-        'interfaces': operation.NodeTemplateInterfaces,
+        'interfaces': _operation.NodeTemplateInterfaces,
         'relationships': NodeTemplateRelationships,
         'properties': NodeTemplateProperties,
     }
@@ -282,7 +284,7 @@ class NodeTemplates(Element):
 
     def parse(self, node_types, plugins, relationships, resource_base):
         processed_nodes = [node.value for node in self.children()]
-        old_parser._post_process_nodes(
+        _post_process_nodes(
             processed_nodes=processed_nodes,
             types=node_types,
             relationships=relationships,
@@ -309,6 +311,257 @@ class NodeTemplates(Element):
                         deployment_plugin_names \
                             .add(deployment_plugin[constants.PLUGIN_NAME_KEY])
         return deployment_plugins
+
+
+def _post_process_nodes(processed_nodes,
+                        types,
+                        relationships,
+                        plugins,
+                        resource_base):
+    # handle plugins and operations for all nodes
+    for node in processed_nodes:
+        # handle plugins and operations
+        partial_error_message = 'in node {0} of type {1}' \
+            .format(node['id'], node['type'])
+        operations = _process_operations(
+            partial_error_message=partial_error_message,
+            interfaces=node[old_parser.INTERFACES],
+            plugins=plugins,
+            node=node,
+            error_code=10,
+            resource_base=resource_base)
+        node['operations'] = operations
+
+    node_name_to_node = dict((node['id'], node) for node in processed_nodes)
+    contained_in_rel_types = _build_family_descendants_set(
+        relationships, old_parser.CONTAINED_IN_REL_TYPE)
+    for node in processed_nodes:
+        _post_process_node_relationships(node,
+                                         node_name_to_node,
+                                         plugins,
+                                         resource_base)
+
+    # set host_id property to all relevant nodes
+    host_types = _build_family_descendants_set(types, old_parser.HOST_TYPE)
+    for node in processed_nodes:
+        host_id = _extract_node_host_id(node, node_name_to_node, host_types,
+                                        contained_in_rel_types)
+        if host_id:
+            node['host_id'] = host_id
+
+    for node in processed_nodes:
+        # fix plugins for all nodes
+        node[old_parser.PLUGINS] = _get_plugins_from_operations(node, plugins)
+
+    # set plugins_to_install property for nodes
+    for node in processed_nodes:
+        if node['type'] in host_types:
+            plugins_to_install = {}
+            for another_node in processed_nodes:
+                # going over all other nodes, to accumulate plugins
+                # from different nodes whose host is the current node
+                if another_node.get('host_id') == node['id'] \
+                        and old_parser.PLUGINS in another_node:
+                    # ok to override here since we assume it is the same plugin
+                    for plugin in another_node[old_parser.PLUGINS]:
+                        if plugin[constants.PLUGIN_EXECUTOR_KEY] \
+                                == constants.HOST_AGENT:
+                            plugin_name = plugin['name']
+                            plugins_to_install[plugin_name] = plugin
+            node['plugins_to_install'] = plugins_to_install.values()
+
+    # set deployment_plugins_to_install property for nodes
+    for node in processed_nodes:
+        deployment_plugins_to_install = {}
+        for plugin in node[old_parser.PLUGINS]:
+            if plugin[constants.PLUGIN_EXECUTOR_KEY] \
+                    == constants.CENTRAL_DEPLOYMENT_AGENT:
+                plugin_name = plugin['name']
+                deployment_plugins_to_install[plugin_name] = plugin
+        node[constants.DEPLOYMENT_PLUGINS_TO_INSTALL] = \
+            deployment_plugins_to_install.values()
+
+    _validate_agent_plugins_on_host_nodes(processed_nodes)
+
+
+def _post_process_node_relationships(processed_node,
+                                     node_name_to_node,
+                                     plugins,
+                                     resource_base):
+    for relationship in processed_node[old_parser.RELATIONSHIPS]:
+        target_node = node_name_to_node[relationship['target_id']]
+        _process_node_relationships_operations(
+            relationship, 'source_interfaces', 'source_operations',
+            processed_node, plugins, resource_base)
+        _process_node_relationships_operations(
+            relationship, 'target_interfaces', 'target_operations',
+            target_node, plugins, resource_base)
+
+
+def _process_operations(partial_error_message,
+                        interfaces, plugins,
+                        node,
+                        error_code,
+                        resource_base):
+    operations = {}
+    for interface_name, interface in interfaces.items():
+        operation_mapping_context = \
+            old_parser._extract_plugin_names_and_operation_mapping_from_interface(  # noqa
+                interface,
+                plugins,
+                error_code,
+                'In interface {0} {1}'.format(interface_name,
+                                              partial_error_message),
+                resource_base)
+        for op_descriptor in operation_mapping_context:
+            op_struct = op_descriptor.op_struct
+            plugin_name = op_descriptor.op_struct['plugin']
+            operation_name = op_descriptor.name
+            if op_descriptor.plugin:
+                node[old_parser.PLUGINS][plugin_name] = op_descriptor.plugin
+            op_struct = op_struct.copy()
+            if operation_name in operations:
+                # Indicate this implicit operation name needs to be
+                # removed as we can only
+                # support explicit implementation in this case
+                operations[operation_name] = None
+            else:
+                operations[operation_name] = op_struct
+            operations['{0}.{1}'.format(interface_name,
+                                        operation_name)] = op_struct
+
+    return dict((operation, op_struct) for operation, op_struct in
+                operations.iteritems() if op_struct is not None)
+
+
+def _process_node_relationships_operations(relationship,
+                                           interfaces_attribute,
+                                           operations_attribute,
+                                           node_for_plugins,
+                                           plugins,
+                                           resource_base):
+    partial_error_message = 'in relationship of type {0} in node {1}' \
+        .format(relationship['type'],
+                node_for_plugins['id'])
+
+    operations = _process_operations(
+        partial_error_message=partial_error_message,
+        interfaces=relationship[interfaces_attribute],
+        plugins=plugins,
+        node=node_for_plugins,
+        error_code=19,
+        resource_base=resource_base)
+
+    relationship[operations_attribute] = operations
+
+
+def _validate_agent_plugins_on_host_nodes(processed_nodes):
+    for node in processed_nodes:
+        if 'host_id' not in node:
+            for plugin in node[old_parser.PLUGINS]:
+                if plugin[constants.PLUGIN_EXECUTOR_KEY] \
+                        == constants.HOST_AGENT:
+                    raise exceptions.DSLParsingLogicException(
+                        24, "node {0} has no relationship which makes it "
+                            "contained within a host and it has a "
+                            "plugin[{1}] with '{2}' as an executor. "
+                            "These types of plugins must be "
+                            "installed on a host".format(node['id'],
+                                                         plugin['name'],
+                                                         constants.HOST_AGENT))
+
+
+def _build_family_descendants_set(types_dict, derived_from):
+    return set(type_name for type_name in types_dict.iterkeys()
+               if _is_derived_from(type_name, types_dict, derived_from))
+
+
+def _is_derived_from(type_name, types, derived_from):
+    if type_name == derived_from:
+        return True
+    elif 'derived_from' in types[type_name]:
+        return _is_derived_from(types[type_name]['derived_from'], types,
+                                derived_from)
+    return False
+
+
+def _extract_node_host_id(processed_node,
+                          node_name_to_node,
+                          host_types,
+                          contained_in_rel_types):
+    if processed_node['type'] in host_types:
+        return processed_node['id']
+    else:
+        for rel in processed_node[old_parser.RELATIONSHIPS]:
+            if rel['type'] in contained_in_rel_types:
+                return _extract_node_host_id(
+                    node_name_to_node[rel['target_id']],
+                    node_name_to_node,
+                    host_types,
+                    contained_in_rel_types)
+    return None
+
+
+def _get_plugins_from_operations(node, processed_plugins):
+    added_plugins = set()
+    plugins = []
+    node_operations = node['operations']
+    plugins_from_operations = _get_plugins_from_operations_helper(
+        node_operations, processed_plugins)
+    _add_plugins(plugins, plugins_from_operations, added_plugins)
+    plugins_from_node = node['plugins'].values()
+    _add_plugins(plugins, plugins_from_node, added_plugins)
+    for relationship in node['relationships']:
+        source_operations = relationship['source_operations']
+        target_operations = relationship['target_operations']
+        _set_operations_executor(target_operations, processed_plugins)
+        _set_operations_executor(source_operations, processed_plugins)
+    return plugins
+
+
+def _add_plugins(plugins, new_plugins, added_plugins):
+    for plugin in new_plugins:
+        plugin_key = (plugin['name'], plugin['executor'])
+        if plugin_key not in added_plugins:
+            plugins.append(plugin)
+            added_plugins.add(plugin_key)
+
+
+def _get_plugins_from_operations_helper(operations, processed_plugins):
+    plugins = []
+    for operation in operations.values():
+        real_executor = _set_operation_executor(
+            operation, processed_plugins)
+        plugin_name = operation['plugin']
+        if not plugin_name:
+            # no-op
+            continue
+        plugin = copy.deepcopy(processed_plugins[plugin_name])
+        plugin['executor'] = real_executor
+        plugins.append(plugin)
+    return plugins
+
+
+def _set_operations_executor(operations, processed_plugins):
+    for operation in operations.values():
+        _set_operation_executor(operation, processed_plugins)
+
+
+def _set_operation_executor(operation, processed_plugins):
+    operation_executor = operation['executor']
+    plugin_name = operation['plugin']
+    if not plugin_name:
+        # no-op
+        return
+    if operation_executor is None:
+        real_executor = processed_plugins[plugin_name]['executor']
+    else:
+        real_executor = operation_executor
+
+    # set actual executor for the operation
+    operation['executor'] = real_executor
+
+    return real_executor
 
 
 def _create_type_hierarchy(type_name, types):
