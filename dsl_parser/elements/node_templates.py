@@ -65,14 +65,16 @@ class NodeTemplateProperties(Element):
             return properties
         node_type = node_types[node_type_name]
         return utils.merge_schema_and_instance_properties(
-            properties,
-            node_type['properties'],
-            '{0} node \'{1}\' property is not part of the derived'
-            ' type properties schema',
-            '{0} node does not provide a '
-            'value for mandatory  '
-            '\'{1}\' property which is '
-            'part of its type schema',
+            instance_properties=properties,
+            schema_properties=node_type['properties'],
+            undefined_property_error_message=(
+                '{0} node \'{1}\' property is not part of the derived'
+                ' type properties schema'),
+            missing_property_error_message=(
+                '{0} node does not provide a '
+                'value for mandatory  '
+                '\'{1}\' property which is '
+                'part of its type schema'),
             node_name=self.ancestor(NodeTemplate).name)
 
 
@@ -130,14 +132,17 @@ class NodeTemplateRelationshipProperties(Element):
             NodeTemplateRelationshipType).value
         properties = self.initial_value or {}
         return utils.merge_schema_and_instance_properties(
-            properties,
-            relationships[relationship_type_name]['properties'],
-            '{0} node relationship \'{1}\' property is not part of '
-            'the derived relationship type properties schema',
-            '{0} node relationship does not provide a '
-            'value for mandatory  '
-            '\'{1}\' property which is '
-            'part of its relationship type schema',
+            instance_properties=properties,
+            schema_properties=relationships[relationship_type_name][
+                'properties'],
+            undefined_property_error_message=(
+                '{0} node relationship \'{1}\' property is not part of '
+                'the derived relationship type properties schema'),
+            missing_property_error_message=(
+                '{0} node relationship does not provide a '
+                'value for mandatory  '
+                '\'{1}\' property which is '
+                'part of its relationship type schema'),
             node_name=self.ancestor(NodeTemplate).name)
 
 
@@ -335,24 +340,32 @@ def _post_process_nodes(processed_nodes,
                         resource_base):
     node_name_to_node = dict((node['id'], node) for node in processed_nodes)
     contained_in_rel_types = _build_family_descendants_set(
-        relationships, old_parser.CONTAINED_IN_REL_TYPE)
+        types_dict=relationships,
+        derived_from=old_parser.CONTAINED_IN_REL_TYPE)
     for node in processed_nodes:
-        _post_process_node_relationships(node,
-                                         node_name_to_node,
-                                         plugins,
-                                         resource_base)
+        _post_process_node_relationships(processed_node=node,
+                                         node_name_to_node=node_name_to_node,
+                                         plugins=plugins,
+                                         resource_base=resource_base)
 
     # set host_id property to all relevant nodes
-    host_types = _build_family_descendants_set(types, old_parser.HOST_TYPE)
+    host_types = _build_family_descendants_set(
+        types_dict=types,
+        derived_from=old_parser.HOST_TYPE)
     for node in processed_nodes:
-        host_id = _extract_node_host_id(node, node_name_to_node, host_types,
-                                        contained_in_rel_types)
+        host_id = _extract_node_host_id(
+            processed_node=node,
+            node_name_to_node=node_name_to_node,
+            host_types=host_types,
+            contained_in_rel_types=contained_in_rel_types)
         if host_id:
             node['host_id'] = host_id
 
     for node in processed_nodes:
         # fix plugins for all nodes
-        node[old_parser.PLUGINS] = _get_plugins_from_operations(node, plugins)
+        node[old_parser.PLUGINS] = _get_plugins_from_operations(
+            node=node,
+            processed_plugins=plugins)
 
     # set plugins_to_install property for nodes
     for node in processed_nodes:
@@ -392,15 +405,24 @@ def _post_process_node_relationships(processed_node,
     for relationship in processed_node[old_parser.RELATIONSHIPS]:
         target_node = node_name_to_node[relationship['target_id']]
         _process_node_relationships_operations(
-            relationship, 'source_interfaces', 'source_operations',
-            processed_node, plugins, resource_base)
+            relationship=relationship,
+            interfaces_attribute='source_interfaces',
+            operations_attribute='source_operations',
+            node_for_plugins=processed_node,
+            plugins=plugins,
+            resource_base=resource_base)
         _process_node_relationships_operations(
-            relationship, 'target_interfaces', 'target_operations',
-            target_node, plugins, resource_base)
+            relationship=relationship,
+            interfaces_attribute='target_interfaces',
+            operations_attribute='target_operations',
+            node_for_plugins=target_node,
+            plugins=plugins,
+            resource_base=resource_base)
 
 
 def _process_operations(partial_error_message,
-                        interfaces, plugins,
+                        interfaces,
+                        plugins,
                         node,
                         error_code,
                         resource_base):
@@ -408,12 +430,13 @@ def _process_operations(partial_error_message,
     for interface_name, interface in interfaces.items():
         operation_mapping_context = \
             old_parser._extract_plugin_names_and_operation_mapping_from_interface(  # noqa
-                interface,
-                plugins,
-                error_code,
-                'In interface {0} {1}'.format(interface_name,
-                                              partial_error_message),
-                resource_base)
+                interface=interface,
+                plugins=plugins,
+                error_code=error_code,
+                partial_error_message=(
+                    'In interface {0} {1}'.format(interface_name,
+                                                  partial_error_message)),
+                resource_base=resource_base)
         for op_descriptor in operation_mapping_context:
             op_struct = op_descriptor.op_struct
             plugin_name = op_descriptor.op_struct['plugin']
@@ -508,15 +531,26 @@ def _get_plugins_from_operations(node, processed_plugins):
     plugins = []
     node_operations = node['operations']
     plugins_from_operations = _get_plugins_from_operations_helper(
-        node_operations, processed_plugins)
-    _add_plugins(plugins, plugins_from_operations, added_plugins)
+        operations=node_operations,
+        processed_plugins=processed_plugins)
+    _add_plugins(
+        plugins=plugins,
+        new_plugins=plugins_from_operations,
+        added_plugins=added_plugins)
     plugins_from_node = node['plugins'].values()
-    _add_plugins(plugins, plugins_from_node, added_plugins)
+    _add_plugins(
+        plugins=plugins,
+        new_plugins=plugins_from_node,
+        added_plugins=added_plugins)
     for relationship in node['relationships']:
         source_operations = relationship['source_operations']
         target_operations = relationship['target_operations']
-        _set_operations_executor(target_operations, processed_plugins)
-        _set_operations_executor(source_operations, processed_plugins)
+        _set_operations_executor(
+            operations=target_operations,
+            processed_plugins=processed_plugins)
+        _set_operations_executor(
+            operations=source_operations,
+            processed_plugins=processed_plugins)
     return plugins
 
 
@@ -532,7 +566,8 @@ def _get_plugins_from_operations_helper(operations, processed_plugins):
     plugins = []
     for operation in operations.values():
         real_executor = _set_operation_executor(
-            operation, processed_plugins)
+            operation=operation,
+            processed_plugins=processed_plugins)
         plugin_name = operation['plugin']
         if not plugin_name:
             # no-op
@@ -545,7 +580,8 @@ def _get_plugins_from_operations_helper(operations, processed_plugins):
 
 def _set_operations_executor(operations, processed_plugins):
     for operation in operations.values():
-        _set_operation_executor(operation, processed_plugins)
+        _set_operation_executor(operation=operation,
+                                processed_plugins=processed_plugins)
 
 
 def _set_operation_executor(operation, processed_plugins):
@@ -573,7 +609,9 @@ def _create_type_hierarchy(type_name, types):
     current_type = types[type_name]
     if 'derived_from' in current_type:
         parent_type_name = current_type['derived_from']
-        types_hierarchy = _create_type_hierarchy(parent_type_name, types)
+        types_hierarchy = _create_type_hierarchy(
+            type_name=parent_type_name,
+            types=types)
         types_hierarchy.append(type_name)
         return types_hierarchy
     return [type_name]

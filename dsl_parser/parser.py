@@ -83,7 +83,8 @@ def _parse(dsl_string, resources_base_url, dsl_location=None):
     from dsl_parser.elements.parser import Parser
     from dsl_parser.elements import blueprint
 
-    parsed_dsl = _load_yaml(dsl_string, 'Failed to parse DSL')
+    parsed_dsl = _load_yaml(yaml_stream=dsl_string,
+                            error_message='Failed to parse DSL')
 
     parser = Parser()
 
@@ -127,12 +128,12 @@ def _extract_plugin_names_and_operation_mapping_from_interface(
     for operation_name, operation_content in interface.items():
         op_descriptor = \
             _extract_plugin_name_and_operation_mapping_from_operation(
-                plugins,
-                operation_name,
-                operation_content,
-                error_code,
-                partial_error_message,
-                resource_base)
+                plugins=plugins,
+                operation_name=operation_name,
+                operation_content=operation_content,
+                error_code=error_code,
+                partial_error_message=partial_error_message,
+                resource_base=resource_base)
         result.append(op_descriptor)
     return result
 
