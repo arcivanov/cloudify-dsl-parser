@@ -202,11 +202,16 @@ class Parser(object):
                                 input.name))
                     required_args[input.name] = context.inputs.get(input.name)
             else:
+                if required_type == 'self':
+                    required_type = type(element)
                 required_type_elements = context.element_type_to_elements.get(
                     required_type, [])
                 for requirement in requirements:
                     result = []
                     for required_element in required_type_elements:
+                        if requirement.predicate and not requirement.predicate(
+                                element, required_element):
+                            continue
                         if requirement.parsed:
                             result.append(required_element.value)
                         else:
@@ -221,10 +226,13 @@ class Parser(object):
                                 requirement.name])
 
                     if len(result) != 1 and not requirement.multiple_results:
-                        raise exceptions.DSLParsingFormatException(
-                            1, 'Expected exactly one result for'
-                               'requirement: {0}'
-                               .format(requirement.name))
+                        if requirement.required:
+                            raise exceptions.DSLParsingFormatException(
+                                1, 'Expected exactly one result for '
+                                   'requirement: {0}'
+                                   .format(requirement.name))
+                        else:
+                            result = [None]
 
                     if not requirement.multiple_results:
                         result = result[0]
@@ -281,20 +289,42 @@ class Context(object):
         self.element_graph = nx.DiGraph(self.element_tree)
         for element_type, _elements in self.element_type_to_elements.items():
             requires = element_type.requires
-            for requirement in requires.keys():
+            for requirement, requirement_values in requires.items():
+                requirement_values = [
+                    Requirement(r) if isinstance(r, basestring)
+                    else r for r in requirement_values]
                 if requirement == 'inputs':
                     continue
+                if requirement == 'self':
+                    requirement = element_type
                 dependencies = self.element_type_to_elements[requirement]
                 for dependency in dependencies:
                     for element in _elements:
-                        self.element_graph.add_edge(element, dependency)
+                        predicates = [r.predicate for r in requirement_values
+                                      if r.predicate is not None]
+                        add_dependency = not predicates or all([
+                            predicate(element, dependency)
+                            for predicate in predicates])
+                        if add_dependency:
+                            self.element_graph.add_edge(element, dependency)
         # we reverse the graph because only netorkx 1.9.1 has the reverse
         # flag in the topological sort function, it is only used by it
         # so this should be good
         self.element_graph.reverse(copy=False)
 
     def elements_graph_topological_sort(self):
-        return nx.topological_sort(self.element_graph)
+        try:
+            return nx.topological_sort(self.element_graph)
+        except nx.NetworkXUnfeasible:
+            # Cycle detected
+            cycle = nx.recursive_simple_cycles(self.element_graph)[0]
+            names = [e.name for e in cycle]
+            names.append(names[0])
+            ex = exceptions.DSLParsingLogicException(
+                100, 'Failed parsing. Circular dependency detected: {0}'
+                     .format(' --> '.join(names)))
+            ex.circular_dependency = names
+            raise ex
 
     def child_elements_iter(self, element):
         return self.element_tree.successors_iter(element)
@@ -319,11 +349,13 @@ class Requirement(object):
                  name,
                  parsed=False,
                  multiple_results=False,
-                 required=True):
+                 required=True,
+                 predicate=None):
         self.name = name
         self.parsed = parsed
         self.multiple_results = multiple_results
         self.required = required
+        self.predicate = predicate
 
 
 class Value(Requirement):
@@ -331,8 +363,10 @@ class Value(Requirement):
     def __init__(self,
                  name,
                  multiple_results=False,
-                 required=True):
+                 required=True,
+                 predicate=None):
         super(Value, self).__init__(name,
                                     parsed=True,
                                     multiple_results=multiple_results,
-                                    required=required)
+                                    required=required,
+                                    predicate=predicate)

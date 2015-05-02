@@ -13,8 +13,6 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-import copy
-
 from dsl_parser import functions
 from dsl_parser.exceptions import DSLParsingLogicException
 
@@ -104,55 +102,3 @@ def _validate_properties_types(properties, properties_schema):
             50, 'Property type validation failed: Property {0} type '
                 'is {1}, yet it was assigned with the value {2}'
                 .format(prop_key, prop_type, prop_val))
-
-
-def extract_complete_type(type_obj,
-                          type_name,
-                          types,
-                          merging_func,
-                          is_relationships,
-                          visited_type_names=None):
-
-    """
-    This method is applicable to both types and relationships.
-    it's concerned with extracting the super types recursively,
-    where the merging_func parameter is used
-    to merge them with the current type
-
-    :param type_obj:
-    :param type_name:
-    :param types:
-    :param merging_func:
-    :param is_relationships:
-    :param visited_type_names:
-    :return:
-    """
-
-    if not visited_type_names:
-        visited_type_names = []
-    if type_name in visited_type_names:
-        visited_type_names.append(type_name)
-        ex = DSLParsingLogicException(
-            100, 'Failed parsing {0} {1}, Circular dependency detected: {2}'
-                 .format('relationship' if is_relationships else 'type',
-                         type_name,
-                         ' --> '.join(visited_type_names)))
-        ex.circular_dependency = visited_type_names
-        raise ex
-    visited_type_names.append(type_name)
-    current_level_type = copy.deepcopy(type_obj)
-
-    # halt condition
-    if 'derived_from' not in current_level_type:
-        return current_level_type
-
-    super_type_name = current_level_type['derived_from']
-    super_type = types[super_type_name]
-    complete_super_type = extract_complete_type(
-        type_obj=super_type,
-        type_name=super_type_name,
-        types=types,
-        merging_func=merging_func,
-        visited_type_names=visited_type_names,
-        is_relationships=is_relationships)
-    return merging_func(complete_super_type, current_level_type)

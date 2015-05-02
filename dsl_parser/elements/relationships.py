@@ -21,7 +21,8 @@ from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (properties,
                                  operation,
                                  plugins as _plugins,
-                                 types)
+                                 types,
+                                 parser)
 from dsl_parser.elements.parser import Value, Requirement
 from dsl_parser.elements.elements import Dict
 
@@ -36,27 +37,35 @@ class Relationship(types.Type):
     }
     requires = {
         'inputs': [Requirement('resource_base', required=False)],
-        _plugins.Plugins: [Value('plugins')]
+        _plugins.Plugins: [Value('plugins')],
+        'self': [parser.Value('super_type',
+                              predicate=types.derived_from_predicate,
+                              required=False)]
     }
 
-    def parse(self, plugins, resource_base):
+    def parse(self, super_type, plugins, resource_base):
         relationship_type = self.build_dict_result()
         if not relationship_type.get('derived_from'):
             relationship_type.pop('derived_from', None)
         relationship_type_name = self.name
 
-        complete_relationship = utils.extract_complete_type(
-            type_name=relationship_type_name,
-            type_obj=relationship_type,
-            types=self.ancestor(Relationships).initial_value,
-            is_relationships=True,
-            merging_func=_relationship_type_merging_function)
+        if super_type:
+            relationship_type[old_parser.PROPERTIES] = utils.merge_sub_dicts(
+                overridden_dict=super_type,
+                overriding_dict=relationship_type,
+                sub_dict_key=old_parser.PROPERTIES)
+            for interfaces in [old_parser.SOURCE_INTERFACES,
+                               old_parser.TARGET_INTERFACES]:
+                relationship_type[interfaces] = interfaces_parser. \
+                    merge_relationship_type_interfaces(
+                        overriding_interfaces=relationship_type[interfaces],
+                        overridden_interfaces=super_type[interfaces])
 
         _validate_relationship_fields(
             relationship_type, plugins,
             relationship_type_name,
             resource_base)
-        complete_rel_obj_copy = copy.deepcopy(complete_relationship)
+        complete_rel_obj_copy = copy.deepcopy(relationship_type)
         complete_rel_obj_copy['name'] = relationship_type_name
         return complete_rel_obj_copy
 
@@ -76,25 +85,3 @@ def _validate_relationship_fields(rel_obj, plugins, rel_name, resource_base):
                 19,
                 'Relationship: {0}'.format(rel_name),
                 resource_base=resource_base)
-
-
-def _relationship_type_merging_function(overridden_relationship_type,
-                                        overriding_relationship_type):
-
-    merged_type = overriding_relationship_type
-
-    merged_props = utils.merge_sub_dicts(overridden_relationship_type,
-                                         merged_type,
-                                         old_parser.PROPERTIES)
-
-    merged_type[old_parser.PROPERTIES] = merged_props
-
-    for interfaces in [old_parser.SOURCE_INTERFACES,
-                       old_parser.TARGET_INTERFACES]:
-        merged_type[interfaces] = interfaces_parser.\
-            merge_relationship_type_interfaces(
-                overriding_interfaces=merged_type.get(interfaces, {}),
-                overridden_interfaces=overridden_relationship_type.get(
-                    interfaces, {}))
-
-    return merged_type

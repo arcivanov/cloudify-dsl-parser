@@ -468,8 +468,7 @@ class InterfacesParserTest(testtools.TestCase):
         actual_merged_interfaces = \
             merge_relationship_type_and_instance_interfaces(
                 relationship_type_interfaces=relationship_type_interfaces,
-                relationship_instance_interfaces=
-                relationship_instance_interfaces)
+                relationship_instance_interfaces=relationship_instance_interfaces)  # noqa
 
         self.assertEqual(actual_merged_interfaces,
                          expected_merged_interfaces)
@@ -500,8 +499,7 @@ class InterfacesParserTest(testtools.TestCase):
         actual_merged_interfaces = \
             merge_relationship_type_and_instance_interfaces(
                 relationship_type_interfaces=relationship_type_interfaces,
-                relationship_instance_interfaces=
-                relationship_instance_interfaces)
+                relationship_instance_interfaces=relationship_instance_interfaces)  # noqa
 
         self.assertEqual(actual_merged_interfaces,
                          expected_merged_interfaces)
@@ -552,8 +550,7 @@ class InterfacesParserTest(testtools.TestCase):
         actual_merged_interfaces = \
             merge_relationship_type_and_instance_interfaces(
                 relationship_type_interfaces=relationship_type_interfaces,
-                relationship_instance_interfaces=
-                relationship_instance_interfaces)
+                relationship_instance_interfaces=relationship_instance_interfaces)  # noqa
 
         self.assertEqual(actual_merged_interfaces,
                          expected_merged_interfaces)

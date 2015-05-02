@@ -19,7 +19,8 @@ from dsl_parser import (parser as old_parser,
 from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (operation,
                                  properties,
-                                 types)
+                                 types,
+                                 parser)
 from dsl_parser.elements.elements import Dict
 
 
@@ -31,40 +32,28 @@ class NodeType(types.Type):
         'properties': properties.Schema,
     }
 
-    def parse(self, **kwargs):
+    requires = {
+        'self': [parser.Value('super_type',
+                              predicate=types.derived_from_predicate,
+                              required=False)]
+    }
+
+    def parse(self, super_type):
         node_type = self.build_dict_result()
         if not node_type.get('derived_from'):
             node_type.pop('derived_from', None)
-        return utils.extract_complete_type(
-            type_name=self.name,
-            type_obj=node_type,
-            types=self.ancestor(NodeTypes).initial_value,
-            is_relationships=False,
-            merging_func=_node_type_merging_function)
+        if super_type:
+            node_type[old_parser.PROPERTIES] = utils.merge_sub_dicts(
+                overridden_dict=super_type,
+                overriding_dict=node_type,
+                sub_dict_key=old_parser.PROPERTIES)
+            node_type[old_parser.INTERFACES] = interfaces_parser. \
+                merge_node_type_interfaces(
+                    overridden_interfaces=super_type[old_parser.INTERFACES],
+                    overriding_interfaces=node_type[old_parser.INTERFACES])
+        return node_type
 
 
 class NodeTypes(types.Types):
 
     schema = Dict(type=NodeType)
-
-
-def _node_type_merging_function(overridden_node_type,
-                                overriding_node_type):
-
-    merged_type = overriding_node_type
-
-    # derive properties
-    merged_type[old_parser.PROPERTIES] = utils.merge_sub_dicts(
-        overridden_node_type,
-        merged_type,
-        old_parser.PROPERTIES)
-
-    # derive interfaces
-    merged_type[old_parser.INTERFACES] = interfaces_parser.\
-        merge_node_type_interfaces(
-            overridden_interfaces=overridden_node_type.get(
-                old_parser.INTERFACES, {}),
-            overriding_interfaces=overriding_node_type.get(
-                old_parser.INTERFACES, {}))
-
-    return merged_type

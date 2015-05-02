@@ -55,3 +55,11 @@ class RelationshipDerivedFrom(DerivedFrom):
 class TypeDerivedFrom(DerivedFrom):
 
     descriptor = 'relationship'
+
+
+def derived_from_predicate(source, target):
+    try:
+        derived_from = source.child(DerivedFrom).initial_value
+        return derived_from and derived_from == target.name
+    except exceptions.DSLParsingElementMatchException:
+        return False

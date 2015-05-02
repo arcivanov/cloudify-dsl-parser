@@ -13,6 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
+from dsl_parser import exceptions
+
 
 class ElementType(object):
 
@@ -86,20 +88,22 @@ class Element(object):
         matches = [e for e in self.context.ancestors_iter(self)
                    if isinstance(e, element_type)]
         if not matches:
-            raise ValueError('No matches found for {0}'.format(element_type))
+            raise exceptions.DSLParsingElementMatchException(
+                'No matches found for {0}'.format(element_type))
         if len(matches) > 1:
-            raise ValueError('Multiple matches found for {0}'.format(
-                element_type))
+            raise exceptions.DSLParsingElementMatchException(
+                'Multiple matches found for {0}'.format(element_type))
         return matches[0]
 
     def child(self, element_type):
         matches = [e for e in self.context.child_elements_iter(self)
                    if isinstance(e, element_type)]
         if not matches:
-            raise ValueError('No matches found for {0}'.format(element_type))
+            raise exceptions.DSLParsingElementMatchException(
+                'No matches found for {0}'.format(element_type))
         if len(matches) > 1:
-            raise ValueError('Multiple matches found for {0}'.format(
-                element_type))
+            raise exceptions.DSLParsingElementMatchException(
+                'Multiple matches found for {0}'.format(element_type))
         return matches[0]
 
     def build_dict_result(self):
