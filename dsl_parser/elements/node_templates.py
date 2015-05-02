@@ -263,9 +263,7 @@ def _node_template_related_nodes_predicate(source, target):
     if source.name == target.name:
         return False
     targets = source.descendants(NodeTemplateRelationshipTarget)
-    relationship_targets = [
-        e.initial_value
-        for e in targets]
+    relationship_targets = [e.initial_value for e in targets]
     return target.name in relationship_targets
 
 
