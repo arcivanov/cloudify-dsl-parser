@@ -89,11 +89,13 @@ def _relationship_type_merging_function(overridden_relationship_type,
 
     merged_type[old_parser.PROPERTIES] = merged_props
 
-    # derived source and target interfaces
-    merged_interfaces = \
-        interfaces_parser.merge_relationship_type_interfaces(
-            overridden_relationship_type=overridden_relationship_type,
-            overriding_relationship_type=merged_type
-        )
-    merged_type.update(merged_interfaces)
+    for interfaces in [old_parser.SOURCE_INTERFACES,
+                       old_parser.TARGET_INTERFACES]:
+        merged_type[interfaces] = interfaces_parser.\
+            merge_relationship_type_interfaces(
+                overriding_interfaces=
+                merged_type.get(interfaces, {}),
+                overridden_interfaces=
+                overridden_relationship_type.get(interfaces, {}))
+
     return merged_type

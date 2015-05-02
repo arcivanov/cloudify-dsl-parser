@@ -19,138 +19,41 @@ from dsl_parser.interfaces.operation_merger import (
     RelationshipTypeRelationshipInstanceOperationMerger,
     RelationshipTypeRelationshipTypeOperationMerger,
     NodeTemplateNodeTypeOperationMerger)
-from dsl_parser.interfaces.constants import (INTERFACES,
-                                             SOURCE_INTERFACES,
-                                             TARGET_INTERFACES)
 
 
-def merge_node_type_interfaces(overriding_node_type,
-                               overridden_node_type):
-
-    # using this pattern for the sake of
-    # code coverage tools
-
-    overriding_interfaces = overriding_node_type.get(INTERFACES)
-    if not overriding_interfaces:
-        overriding_interfaces = {}
-
-    overridden_interfaces = overridden_node_type.get(INTERFACES)
-    if not overridden_interfaces:
-        overridden_interfaces = {}
-
-    merger = InterfacesMerger(
+def merge_node_type_interfaces(overriding_interfaces,
+                               overridden_interfaces):
+    return InterfacesMerger(
         overriding_interfaces=overriding_interfaces,
         overridden_interfaces=overridden_interfaces,
         operation_merger=NodeTypeNodeTypeOperationMerger
-    )
-    return merger.merge()
+    ).merge()
 
 
-def merge_node_type_and_node_template_interfaces(node_type,
-                                                 node_template):
+def merge_node_type_and_node_template_interfaces(node_type_interfaces,
+                                                 node_template_interfaces):
+    return InterfacesMerger(
+        overriding_interfaces=node_template_interfaces,
+        overridden_interfaces=node_type_interfaces,
+        operation_merger=NodeTemplateNodeTypeOperationMerger
+    ).merge()
 
-    # using this pattern for the sake of
-    # code coverage tools
 
-    overriding_interfaces = node_template.get(INTERFACES)
-    if not overriding_interfaces:
-        overriding_interfaces = {}
-
-    overridden_interfaces = node_type.get(INTERFACES)
-    if not overridden_interfaces:
-        overridden_interfaces = {}
-
-    merger = InterfacesMerger(
+def merge_relationship_type_interfaces(
+        overriding_interfaces,
+        overridden_interfaces):
+    return InterfacesMerger(
         overriding_interfaces=overriding_interfaces,
         overridden_interfaces=overridden_interfaces,
-        operation_merger=NodeTemplateNodeTypeOperationMerger
-    )
-    return merger.merge()
-
-
-def merge_relationship_type_interfaces(overriding_relationship_type,
-                                       overridden_relationship_type):
-    # using this pattern for the sake of
-    # code coverage tools
-
-    overriding_source_interfaces = overriding_relationship_type.get(
-        SOURCE_INTERFACES)
-    if not overriding_source_interfaces:
-        overriding_source_interfaces = {}
-
-    overridden_source_interfaces = overridden_relationship_type.get(
-        SOURCE_INTERFACES)
-    if not overridden_source_interfaces:
-        overridden_source_interfaces = {}
-
-    overriding_target_interfaces = overriding_relationship_type.get(
-        TARGET_INTERFACES)
-    if not overriding_target_interfaces:
-        overriding_target_interfaces = {}
-
-    overridden_target_interfaces = overridden_relationship_type.get(
-        TARGET_INTERFACES)
-    if not overridden_target_interfaces:
-        overridden_target_interfaces = {}
-
-    source_interfaces_merger = InterfacesMerger(
-        overriding_interfaces=overriding_source_interfaces,
-        overridden_interfaces=overridden_source_interfaces,
         operation_merger=RelationshipTypeRelationshipTypeOperationMerger
-    )
-    target_interfaces_merger = InterfacesMerger(
-        overriding_interfaces=overriding_target_interfaces,
-        overridden_interfaces=overridden_target_interfaces,
-        operation_merger=RelationshipTypeRelationshipTypeOperationMerger
-    )
-
-    merged_source_interfaces = source_interfaces_merger.merge()
-    merged_target_interfaces = target_interfaces_merger.merge()
-
-    return {
-        SOURCE_INTERFACES: merged_source_interfaces,
-        TARGET_INTERFACES: merged_target_interfaces
-    }
+    ).merge()
 
 
 def merge_relationship_type_and_instance_interfaces(
-        relationship_type,
-        relationship_instance):
-
-    # using this pattern for the sake of
-    # code coverage tools
-
-    overriding_source_interfaces = relationship_instance.get(SOURCE_INTERFACES)
-    if not overriding_source_interfaces:
-        overriding_source_interfaces = {}
-
-    overridden_source_interfaces = relationship_type.get(SOURCE_INTERFACES)
-    if not overridden_source_interfaces:
-        overridden_source_interfaces = {}
-
-    overriding_target_interfaces = relationship_instance.get(TARGET_INTERFACES)
-    if not overriding_target_interfaces:
-        overriding_target_interfaces = {}
-
-    overridden_target_interfaces = relationship_type.get(TARGET_INTERFACES)
-    if not overridden_target_interfaces:
-        overridden_target_interfaces = {}
-
-    source_interfaces_merger = InterfacesMerger(
-        overriding_interfaces=overriding_source_interfaces,
-        overridden_interfaces=overridden_source_interfaces,
+        relationship_type_interfaces,
+        relationship_instance_interfaces):
+    return InterfacesMerger(
+        overriding_interfaces=relationship_instance_interfaces,
+        overridden_interfaces=relationship_type_interfaces,
         operation_merger=RelationshipTypeRelationshipInstanceOperationMerger
-    )
-    target_interfaces_merger = InterfacesMerger(
-        overriding_interfaces=overriding_target_interfaces,
-        overridden_interfaces=overridden_target_interfaces,
-        operation_merger=RelationshipTypeRelationshipInstanceOperationMerger
-    )
-
-    merged_source_interfaces = source_interfaces_merger.merge()
-    merged_target_interfaces = target_interfaces_merger.merge()
-
-    return {
-        SOURCE_INTERFACES: merged_source_interfaces,
-        TARGET_INTERFACES: merged_target_interfaces
-    }
+    ).merge()

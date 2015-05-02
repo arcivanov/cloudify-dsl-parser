@@ -62,8 +62,9 @@ def _node_type_merging_function(overridden_node_type,
     # derive interfaces
     merged_type[old_parser.INTERFACES] = interfaces_parser.\
         merge_node_type_interfaces(
-            overridden_node_type=overridden_node_type,
-            overriding_node_type=overriding_node_type
-    )
+            overridden_interfaces=
+            overridden_node_type.get(old_parser.INTERFACES, {}),
+            overriding_interfaces=
+            overriding_node_type.get(old_parser.INTERFACES, {}))
 
     return merged_type

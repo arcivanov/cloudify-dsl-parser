@@ -183,11 +183,13 @@ class NodeTemplateRelationship(Element):
         relationship_type_name = self.child(NodeTemplateRelationshipType).value
 
         relationship_type = relationships[relationship_type_name]
-        source_and_target_interfaces = interfaces_parser. \
-            merge_relationship_type_and_instance_interfaces(
-                relationship_type=relationship_type,
-                relationship_instance=result)
-        result.update(source_and_target_interfaces)
+
+        for interfaces in [old_parser.SOURCE_INTERFACES,
+                           old_parser.TARGET_INTERFACES]:
+            result[interfaces] = interfaces_parser. \
+                merge_relationship_type_and_instance_interfaces(
+                    relationship_type_interfaces=relationship_type[interfaces],
+                    relationship_instance_interfaces=result[interfaces])
 
         result[old_parser.TYPE_HIERARCHY] = _create_type_hierarchy(
             type_name=relationship_type_name,
@@ -250,8 +252,8 @@ class NodeTemplate(Element):
         node_type = node_types[self.child(NodeTemplateType).value]
         interfaces = interfaces_parser.\
             merge_node_type_and_node_template_interfaces(
-                node_type=node_type,
-                node_template=node)
+                node_type_interfaces=node_type[old_parser.INTERFACES],
+                node_template_interfaces=node[old_parser.INTERFACES])
 
         type_hierarchy = _create_type_hierarchy(
             type_name=self.child(NodeTemplateType).value,
