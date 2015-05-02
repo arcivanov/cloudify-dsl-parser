@@ -342,6 +342,9 @@ class Context(object):
             current_element = predecessors[0]
             yield current_element
 
+    def descendants(self, element):
+        return nx.descendants(self.element_tree, element)
+
 
 class Requirement(object):
 

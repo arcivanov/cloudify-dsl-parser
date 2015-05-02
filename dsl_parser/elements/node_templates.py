@@ -213,29 +213,55 @@ class NodeTemplateRelationships(Element):
     requires = {
         _relationships.Relationships: [Value('relationships')],
     }
+    provides = ['contained_in']
 
     def validate(self, relationships):
         contained_in_relationships = []
+        contained_in_targets = []
         for relationship in self.children():
+            relationship_target = relationship.child(
+                NodeTemplateRelationshipTarget).value
             relationship_type = relationship.child(
                 NodeTemplateRelationshipType).value
             type_hierarchy = relationship.value[old_parser.TYPE_HIERARCHY]
             if old_parser.CONTAINED_IN_REL_TYPE in type_hierarchy:
                 contained_in_relationships.append(relationship_type)
+                contained_in_targets.append(relationship_target)
 
         if len(contained_in_relationships) > 1:
             ex = exceptions.DSLParsingLogicException(
                 112, 'Node {0} has more than one relationship that is derived'
-                     ' from {1} relationship. Found: {2}'
+                     ' from {1} relationship. Found: {2} for targets: {3}'
                      .format(self.ancestor(NodeTemplate).name,
                              old_parser.CONTAINED_IN_REL_TYPE,
-                             contained_in_relationships))
+                             contained_in_relationships,
+                             contained_in_targets))
             ex.relationship_types = contained_in_relationships
             raise ex
 
     def parse(self, **kwargs):
         return [c.value for c in sorted(self.children(),
                                         key=lambda child: child.name)]
+
+    def calculate_provided(self, **kwargs):
+        contained_in_list = [r.child(NodeTemplateRelationshipTarget).value
+                             for r in self.children()
+                             if old_parser.CONTAINED_IN_REL_TYPE in
+                             r.value[old_parser.TYPE_HIERARCHY]]
+        contained_in = contained_in_list[0] if contained_in_list else None
+        return {
+            'contained_in': contained_in
+        }
+
+
+def _node_template_related_predicate(source, target):
+    if source.name == target.name:
+        return False
+    targets = source.descendants(NodeTemplateRelationshipTarget)
+    relationship_targets = [
+        e.initial_value
+        for e in targets]
+    return target.name in relationship_targets
 
 
 class NodeTemplate(Element):
@@ -249,11 +275,15 @@ class NodeTemplate(Element):
     }
     requires = {
         'inputs': [Requirement('resource_base', required=False)],
+        'self': [Value('related_node_templates',
+                       predicate=_node_template_related_predicate,
+                       multiple_results=True)],
         _plugins.Plugins: [Value('plugins')],
         _node_types.NodeTypes: [Value('node_types')]
     }
 
-    def parse(self, node_types, plugins, resource_base):
+    def parse(self, node_types, plugins, resource_base,
+              related_node_templates):
         node = self.build_dict_result()
         node.update({
             'name': self.name,
@@ -279,10 +309,31 @@ class NodeTemplate(Element):
             resource_base=resource_base)
         node['operations'] = operations
 
+        node_name_to_node = dict((node['id'], node)
+                                 for node in related_node_templates)
+        _post_process_node_relationships(processed_node=node,
+                                         node_name_to_node=node_name_to_node,
+                                         plugins=plugins,
+                                         resource_base=resource_base)
+
         type_hierarchy = _create_type_hierarchy(
             type_name=self.child(NodeTemplateType).value,
             types=node_types)
         node[old_parser.TYPE_HIERARCHY] = type_hierarchy
+
+        contained_in = self.child(NodeTemplateRelationships).provided[
+            'contained_in']
+        if contained_in:
+            containing_node = [n for n in related_node_templates
+                               if n['name'] == contained_in][0]
+            if 'host_id' in containing_node:
+                node['host_id'] = containing_node['host_id']
+        else:
+            host_types = _build_family_descendants_set(
+                types_dict=node_types,
+                derived_from=old_parser.HOST_TYPE)
+            if self.child(NodeTemplateType).value in host_types:
+                node['host_id'] = self.name
 
         return node
 
@@ -292,8 +343,6 @@ class NodeTemplates(Element):
     required = True
     schema = Dict(type=NodeTemplate)
     requires = {
-        'inputs': [Requirement('resource_base', required=False)],
-        _relationships.Relationships: [Value('relationships')],
         _plugins.Plugins: [Value('plugins')],
         _node_types.NodeTypes: [Value('node_types')]
     }
@@ -302,14 +351,12 @@ class NodeTemplates(Element):
         'plan_deployment_plugins'
     ]
 
-    def parse(self, node_types, plugins, relationships, resource_base):
+    def parse(self, node_types, plugins):
         processed_nodes = [node.value for node in self.children()]
         _post_process_nodes(
             processed_nodes=processed_nodes,
             types=node_types,
-            relationships=relationships,
-            plugins=plugins,
-            resource_base=resource_base)
+            plugins=plugins)
         return processed_nodes
 
     def calculate_provided(self, **kwargs):
@@ -335,38 +382,16 @@ class NodeTemplates(Element):
 
 def _post_process_nodes(processed_nodes,
                         types,
-                        relationships,
-                        plugins,
-                        resource_base):
-    node_name_to_node = dict((node['id'], node) for node in processed_nodes)
-    contained_in_rel_types = _build_family_descendants_set(
-        types_dict=relationships,
-        derived_from=old_parser.CONTAINED_IN_REL_TYPE)
-    for node in processed_nodes:
-        _post_process_node_relationships(processed_node=node,
-                                         node_name_to_node=node_name_to_node,
-                                         plugins=plugins,
-                                         resource_base=resource_base)
-
-    # set host_id property to all relevant nodes
-    host_types = _build_family_descendants_set(
-        types_dict=types,
-        derived_from=old_parser.HOST_TYPE)
-    for node in processed_nodes:
-        host_id = _extract_node_host_id(
-            processed_node=node,
-            node_name_to_node=node_name_to_node,
-            host_types=host_types,
-            contained_in_rel_types=contained_in_rel_types)
-        if host_id:
-            node['host_id'] = host_id
-
+                        plugins):
     for node in processed_nodes:
         # fix plugins for all nodes
         node[old_parser.PLUGINS] = _get_plugins_from_operations(
             node=node,
             processed_plugins=plugins)
 
+    host_types = _build_family_descendants_set(
+        types_dict=types,
+        derived_from=old_parser.HOST_TYPE)
     # set plugins_to_install property for nodes
     for node in processed_nodes:
         if node['type'] in host_types:

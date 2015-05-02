@@ -95,6 +95,10 @@ class Element(object):
                 'Multiple matches found for {0}'.format(element_type))
         return matches[0]
 
+    def descendants(self, element_type):
+        return [e for e in self.context.descendants(self)
+                if isinstance(e, element_type)]
+
     def child(self, element_type):
         matches = [e for e in self.context.child_elements_iter(self)
                    if isinstance(e, element_type)]
