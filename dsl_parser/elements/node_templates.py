@@ -233,22 +233,6 @@ class NodeTemplateRelationships(Element):
                                         key=lambda child: child.name)]
 
 
-class NodeTemplateInterfaces(DictElement):
-
-    schema = Dict(type=_operation.NodeTemplateInterface)
-
-    # requires = {
-    #     NodeTemplateType: [],
-    #     _node_types.NodeTypes: [Value('node_types')]
-    # }
-    #
-    # def parse(self, node_types):
-    #     node_type = node_types[self.sibling(NodeTemplateType).value]
-    #     return interfaces_parser.merge_node_type_and_node_template_interfaces(
-    #         node_type_interfaces=node_type[old_parser.INTERFACES],
-    #         node_template_interfaces=self.build_dict_result())
-
-
 class NodeTemplate(Element):
 
     schema = {
