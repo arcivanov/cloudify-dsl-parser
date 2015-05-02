@@ -23,9 +23,7 @@ import yaml
 import yaml.parser
 
 from dsl_parser import (constants,
-                        utils,
                         functions)
-from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.exceptions import (DSLParsingFormatException,
                                    DSLParsingLogicException)
 
@@ -322,73 +320,6 @@ def _is_derived_from(type_name, types, derived_from):
     return False
 
 
-def _relationship_type_merging_function(overridden_relationship_type,
-                                        overriding_relationship_type):
-
-    merged_type = overriding_relationship_type
-
-    merged_props = utils.merge_sub_dicts(overridden_relationship_type,
-                                         merged_type,
-                                         PROPERTIES)
-
-    merged_type[PROPERTIES] = merged_props
-
-    # derived source and target interfaces
-    merged_interfaces = \
-        interfaces_parser.merge_relationship_type_interfaces(
-            overridden_relationship_type=overridden_relationship_type,
-            overriding_relationship_type=merged_type
-        )
-    merged_type[SOURCE_INTERFACES] = merged_interfaces[SOURCE_INTERFACES]
-    merged_type[TARGET_INTERFACES] = merged_interfaces[TARGET_INTERFACES]
-
-    return merged_type
-
-
-def _node_type_interfaces_merging_function(overridden_node_type,
-                                           overriding_node_type):
-
-    merged_type = overriding_node_type
-
-    # derive properties
-    merged_type[PROPERTIES] = utils.merge_sub_dicts(
-        overridden_node_type,
-        merged_type,
-        PROPERTIES)
-
-    # derive interfaces
-    merged_type[INTERFACES] = interfaces_parser.merge_node_type_interfaces(
-        overridden_node_type=overridden_node_type,
-        overriding_node_type=overriding_node_type
-    )
-
-    return merged_type
-
-
-def _extract_complete_relationship_type(relationship_types,
-                                        relationship_type_name,
-                                        relationship_type):
-    return utils.extract_complete_type_recursive(
-        dsl_type_name=relationship_type_name,
-        dsl_type=relationship_type,
-        dsl_container=relationship_types,
-        is_relationships=True,
-        merging_func=_relationship_type_merging_function
-    )
-
-
-def _extract_complete_node_type(node_types,
-                                node_type_name,
-                                node_type):
-    return utils.extract_complete_type_recursive(
-        dsl_type_name=node_type_name,
-        dsl_type=node_type,
-        dsl_container=node_types,
-        is_relationships=False,
-        merging_func=_node_type_interfaces_merging_function
-    )
-
-
 def _extract_plugin_name_and_operation_mapping_from_operation(
         plugins,
         operation_name,
@@ -399,14 +330,10 @@ def _extract_plugin_name_and_operation_mapping_from_operation(
         is_workflows=False):
     payload_field_name = 'parameters' if is_workflows else 'inputs'
     mapping_field_name = 'mapping' if is_workflows else 'implementation'
-    if isinstance(operation_content, basestring):
-        operation_content = {
-            mapping_field_name: operation_content
-        }
     operation_mapping = operation_content[mapping_field_name]
     operation_payload = operation_content[payload_field_name]
 
-    # only for operations
+    # only for node operations
     operation_executor = operation_content.get('executor', None)
     operation_max_retries = operation_content.get('max_retries', None)
     operation_retry_interval = operation_content.get('retry_interval', None)

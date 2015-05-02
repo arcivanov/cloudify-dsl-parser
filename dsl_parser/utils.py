@@ -106,12 +106,12 @@ def _validate_properties_types(properties, properties_schema):
                 .format(prop_key, prop_type, prop_val))
 
 
-def extract_complete_type_recursive(dsl_type,
-                                    dsl_type_name,
-                                    dsl_container,
-                                    merging_func,
-                                    is_relationships,
-                                    visited_type_names=None):
+def extract_complete_type(type_obj,
+                          type_name,
+                          types,
+                          merging_func,
+                          is_relationships,
+                          visited_type_names=None):
 
     """
     This method is applicable to both types and relationships.
@@ -119,9 +119,9 @@ def extract_complete_type_recursive(dsl_type,
     where the merging_func parameter is used
     to merge them with the current type
 
-    :param dsl_type:
-    :param dsl_type_name:
-    :param dsl_container:
+    :param type_obj:
+    :param type_name:
+    :param types:
     :param merging_func:
     :param is_relationships:
     :param visited_type_names:
@@ -130,28 +130,28 @@ def extract_complete_type_recursive(dsl_type,
 
     if not visited_type_names:
         visited_type_names = []
-    if dsl_type_name in visited_type_names:
-        visited_type_names.append(dsl_type_name)
+    if type_name in visited_type_names:
+        visited_type_names.append(type_name)
         ex = DSLParsingLogicException(
             100, 'Failed parsing {0} {1}, Circular dependency detected: {2}'
                  .format('relationship' if is_relationships else 'type',
-                         dsl_type_name,
+                         type_name,
                          ' --> '.join(visited_type_names)))
         ex.circular_dependency = visited_type_names
         raise ex
-    visited_type_names.append(dsl_type_name)
-    current_level_type = copy.deepcopy(dsl_type)
+    visited_type_names.append(type_name)
+    current_level_type = copy.deepcopy(type_obj)
 
     # halt condition
     if 'derived_from' not in current_level_type:
         return current_level_type
 
     super_type_name = current_level_type['derived_from']
-    super_type = dsl_container[super_type_name]
-    complete_super_type = extract_complete_type_recursive(
-        dsl_type=super_type,
-        dsl_type_name=super_type_name,
-        dsl_container=dsl_container,
+    super_type = types[super_type_name]
+    complete_super_type = extract_complete_type(
+        type_obj=super_type,
+        type_name=super_type_name,
+        types=types,
         merging_func=merging_func,
         visited_type_names=visited_type_names,
         is_relationships=is_relationships)

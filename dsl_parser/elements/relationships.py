@@ -15,7 +15,9 @@
 
 import copy
 
-from dsl_parser import (parser as old_parser)
+from dsl_parser import (parser as old_parser,
+                        utils)
+from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (properties,
                                  operation,
                                  plugins as _plugins,
@@ -42,11 +44,13 @@ class Relationship(types.Type):
         if not relationship_type.get('derived_from'):
             relationship_type.pop('derived_from', None)
         relationship_type_name = self.name
-        complete_relationship = old_parser._extract_complete_relationship_type(
-            relationship_type=relationship_type,
-            relationship_type_name=relationship_type_name,
-            relationship_types=self.ancestor(Relationships).initial_value
-        )
+
+        complete_relationship = utils.extract_complete_type(
+            type_name=relationship_type_name,
+            type_obj=relationship_type,
+            types=self.ancestor(Relationships).initial_value,
+            is_relationships=True,
+            merging_func=_relationship_type_merging_function)
 
         old_parser._validate_relationship_fields(
             relationship_type, plugins,
@@ -60,3 +64,24 @@ class Relationship(types.Type):
 class Relationships(types.Types):
 
     schema = Dict(type=Relationship)
+
+
+def _relationship_type_merging_function(overridden_relationship_type,
+                                        overriding_relationship_type):
+
+    merged_type = overriding_relationship_type
+
+    merged_props = utils.merge_sub_dicts(overridden_relationship_type,
+                                         merged_type,
+                                         old_parser.PROPERTIES)
+
+    merged_type[old_parser.PROPERTIES] = merged_props
+
+    # derived source and target interfaces
+    merged_interfaces = \
+        interfaces_parser.merge_relationship_type_interfaces(
+            overridden_relationship_type=overridden_relationship_type,
+            overriding_relationship_type=merged_type
+        )
+    merged_type.update(merged_interfaces)
+    return merged_type
