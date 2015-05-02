@@ -279,10 +279,14 @@ class NodeTemplate(Element):
                        predicate=_node_template_related_predicate,
                        multiple_results=True)],
         _plugins.Plugins: [Value('plugins')],
-        _node_types.NodeTypes: [Value('node_types')]
+        _node_types.NodeTypes: [Value('node_types'), 'host_types']
     }
 
-    def parse(self, node_types, plugins, resource_base,
+    def parse(self,
+              node_types,
+              host_types,
+              plugins,
+              resource_base,
               related_node_templates):
         node = self.build_dict_result()
         node.update({
@@ -329,9 +333,6 @@ class NodeTemplate(Element):
             if 'host_id' in containing_node:
                 node['host_id'] = containing_node['host_id']
         else:
-            host_types = _build_family_descendants_set(
-                types_dict=node_types,
-                derived_from=old_parser.HOST_TYPE)
             if self.child(NodeTemplateType).value in host_types:
                 node['host_id'] = self.name
 
@@ -344,18 +345,18 @@ class NodeTemplates(Element):
     schema = Dict(type=NodeTemplate)
     requires = {
         _plugins.Plugins: [Value('plugins')],
-        _node_types.NodeTypes: [Value('node_types')]
+        _node_types.NodeTypes: ['host_types']
     }
     provides = [
         'node_template_names',
         'plan_deployment_plugins'
     ]
 
-    def parse(self, node_types, plugins):
+    def parse(self, host_types, plugins):
         processed_nodes = [node.value for node in self.children()]
         _post_process_nodes(
             processed_nodes=processed_nodes,
-            types=node_types,
+            host_types=host_types,
             plugins=plugins)
         return processed_nodes
 
@@ -381,7 +382,7 @@ class NodeTemplates(Element):
 
 
 def _post_process_nodes(processed_nodes,
-                        types,
+                        host_types,
                         plugins):
     for node in processed_nodes:
         # fix plugins for all nodes
@@ -389,9 +390,6 @@ def _post_process_nodes(processed_nodes,
             node=node,
             processed_plugins=plugins)
 
-    host_types = _build_family_descendants_set(
-        types_dict=types,
-        derived_from=old_parser.HOST_TYPE)
     # set plugins_to_install property for nodes
     for node in processed_nodes:
         if node['type'] in host_types:
@@ -518,37 +516,6 @@ def _validate_agent_plugins_on_host_nodes(processed_nodes):
                             "installed on a host".format(node['id'],
                                                          plugin['name'],
                                                          constants.HOST_AGENT))
-
-
-def _build_family_descendants_set(types_dict, derived_from):
-    return set(type_name for type_name in types_dict.iterkeys()
-               if _is_derived_from(type_name, types_dict, derived_from))
-
-
-def _is_derived_from(type_name, types, derived_from):
-    if type_name == derived_from:
-        return True
-    elif 'derived_from' in types[type_name]:
-        return _is_derived_from(types[type_name]['derived_from'], types,
-                                derived_from)
-    return False
-
-
-def _extract_node_host_id(processed_node,
-                          node_name_to_node,
-                          host_types,
-                          contained_in_rel_types):
-    if processed_node['type'] in host_types:
-        return processed_node['id']
-    else:
-        for rel in processed_node[old_parser.RELATIONSHIPS]:
-            if rel['type'] in contained_in_rel_types:
-                return _extract_node_host_id(
-                    node_name_to_node[rel['target_id']],
-                    node_name_to_node,
-                    host_types,
-                    contained_in_rel_types)
-    return None
 
 
 def _get_plugins_from_operations(node, processed_plugins):
