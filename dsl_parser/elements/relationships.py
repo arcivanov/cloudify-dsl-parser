@@ -93,9 +93,8 @@ def _relationship_type_merging_function(overridden_relationship_type,
                        old_parser.TARGET_INTERFACES]:
         merged_type[interfaces] = interfaces_parser.\
             merge_relationship_type_interfaces(
-                overriding_interfaces=
-                merged_type.get(interfaces, {}),
-                overridden_interfaces=
-                overridden_relationship_type.get(interfaces, {}))
+                overriding_interfaces=merged_type.get(interfaces, {}),
+                overridden_interfaces=overridden_relationship_type.get(
+                    interfaces, {}))
 
     return merged_type
