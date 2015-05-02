@@ -24,7 +24,14 @@ class Types(DictElement):
 
 
 class Type(Element):
-    pass
+
+    def create_type_hierarchy(self, super_type):
+        if super_type:
+            type_hierarchy = super_type['type_hierarchy'][:]
+        else:
+            type_hierarchy = []
+        type_hierarchy.append(self.name)
+        return type_hierarchy
 
 
 class DerivedFrom(Element):

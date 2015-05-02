@@ -169,6 +169,14 @@ class NodeTemplateInstances(DictElement):
             return self.initial_value
 
 
+def _node_template_relationship_type_predicate(source, target):
+    try:
+        return (source.child(NodeTemplateRelationshipType).initial_value ==
+                target.name)
+    except exceptions.DSLParsingElementMatchException:
+        return False
+
+
 class NodeTemplateRelationship(Element):
 
     schema = {
@@ -180,15 +188,13 @@ class NodeTemplateRelationship(Element):
     }
 
     requires = {
-        _relationships.Relationships: [Value('relationships')],
+        _relationships.Relationship: [
+            Value('relationship_type',
+                  predicate=_node_template_relationship_type_predicate)]
     }
 
-    def parse(self, relationships):
+    def parse(self, relationship_type):
         result = self.build_dict_result()
-        relationship_type_name = self.child(NodeTemplateRelationshipType).value
-
-        relationship_type = relationships[relationship_type_name]
-
         for interfaces in [old_parser.SOURCE_INTERFACES,
                            old_parser.TARGET_INTERFACES]:
             result[interfaces] = interfaces_parser. \
@@ -196,9 +202,8 @@ class NodeTemplateRelationship(Element):
                     relationship_type_interfaces=relationship_type[interfaces],
                     relationship_instance_interfaces=result[interfaces])
 
-        result[old_parser.TYPE_HIERARCHY] = _create_type_hierarchy(
-            type_name=relationship_type_name,
-            types=relationships)
+        result[old_parser.TYPE_HIERARCHY] = relationship_type[
+            old_parser.TYPE_HIERARCHY]
 
         result['target_id'] = result['target']
         del result['target']
@@ -254,7 +259,7 @@ class NodeTemplateRelationships(Element):
         }
 
 
-def _node_template_related_predicate(source, target):
+def _node_template_related_nodes_predicate(source, target):
     if source.name == target.name:
         return False
     targets = source.descendants(NodeTemplateRelationshipTarget)
@@ -262,6 +267,14 @@ def _node_template_related_predicate(source, target):
         e.initial_value
         for e in targets]
     return target.name in relationship_targets
+
+
+def _node_template_node_type_predicate(source, target):
+    try:
+        return (source.child(NodeTemplateType).initial_value ==
+                target.name)
+    except exceptions.DSLParsingElementMatchException:
+        return False
 
 
 class NodeTemplate(Element):
@@ -276,14 +289,17 @@ class NodeTemplate(Element):
     requires = {
         'inputs': [Requirement('resource_base', required=False)],
         'self': [Value('related_node_templates',
-                       predicate=_node_template_related_predicate,
+                       predicate=_node_template_related_nodes_predicate,
                        multiple_results=True)],
         _plugins.Plugins: [Value('plugins')],
-        _node_types.NodeTypes: [Value('node_types'), 'host_types']
+        _node_types.NodeType: [
+            Value('node_type',
+                  predicate=_node_template_node_type_predicate)],
+        _node_types.NodeTypes: ['host_types']
     }
 
     def parse(self,
-              node_types,
+              node_type,
               host_types,
               plugins,
               resource_base,
@@ -295,7 +311,6 @@ class NodeTemplate(Element):
             'plugins': {},
         })
 
-        node_type = node_types[self.child(NodeTemplateType).value]
         interfaces = interfaces_parser.\
             merge_node_type_and_node_template_interfaces(
                 node_type_interfaces=node_type[old_parser.INTERFACES],
@@ -308,7 +323,7 @@ class NodeTemplate(Element):
             partial_error_message=partial_error_message,
             interfaces=node[old_parser.INTERFACES],
             plugins=plugins,
-            node=node,
+            node_plugins=node[old_parser.PLUGINS],
             error_code=10,
             resource_base=resource_base)
         node['operations'] = operations
@@ -320,10 +335,7 @@ class NodeTemplate(Element):
                                          plugins=plugins,
                                          resource_base=resource_base)
 
-        type_hierarchy = _create_type_hierarchy(
-            type_name=self.child(NodeTemplateType).value,
-            types=node_types)
-        node[old_parser.TYPE_HIERARCHY] = type_hierarchy
+        node[old_parser.TYPE_HIERARCHY] = node_type[old_parser.TYPE_HIERARCHY]
 
         contained_in = self.child(NodeTemplateRelationships).provided[
             'contained_in']
@@ -446,7 +458,7 @@ def _post_process_node_relationships(processed_node,
 def _process_operations(partial_error_message,
                         interfaces,
                         plugins,
-                        node,
+                        node_plugins,
                         error_code,
                         resource_base):
     operations = {}
@@ -465,7 +477,7 @@ def _process_operations(partial_error_message,
             plugin_name = op_descriptor.op_struct['plugin']
             operation_name = op_descriptor.name
             if op_descriptor.plugin:
-                node[old_parser.PLUGINS][plugin_name] = op_descriptor.plugin
+                node_plugins[plugin_name] = op_descriptor.plugin
             op_struct = op_struct.copy()
             if operation_name in operations:
                 # Indicate this implicit operation name needs to be
@@ -495,7 +507,7 @@ def _process_node_relationships_operations(relationship,
         partial_error_message=partial_error_message,
         interfaces=relationship[interfaces_attribute],
         plugins=plugins,
-        node=node_for_plugins,
+        node_plugins=node_for_plugins[old_parser.PLUGINS],
         error_code=19,
         resource_base=resource_base)
 
@@ -591,19 +603,3 @@ def _set_operation_executor(operation, processed_plugins):
     operation['executor'] = real_executor
 
     return real_executor
-
-
-def _create_type_hierarchy(type_name, types):
-    """
-    Creates node types hierarchy as list where the last type in the list is
-    the actual node type.
-    """
-    current_type = types[type_name]
-    if 'derived_from' in current_type:
-        parent_type_name = current_type['derived_from']
-        types_hierarchy = _create_type_hierarchy(
-            type_name=parent_type_name,
-            types=types)
-        types_hierarchy.append(type_name)
-        return types_hierarchy
-    return [type_name]

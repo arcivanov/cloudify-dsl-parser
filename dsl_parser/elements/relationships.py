@@ -61,11 +61,14 @@ class Relationship(types.Type):
                         overridden_interfaces=super_type[interfaces])
 
         _validate_relationship_fields(
-            relationship_type, plugins,
-            relationship_type_name,
-            resource_base)
+            rel_obj=relationship_type,
+            plugins=plugins,
+            rel_name=relationship_type_name,
+            resource_base=resource_base)
         complete_rel_obj_copy = copy.deepcopy(relationship_type)
         complete_rel_obj_copy['name'] = relationship_type_name
+        complete_rel_obj_copy[
+            old_parser.TYPE_HIERARCHY] = self.create_type_hierarchy(super_type)
         return complete_rel_obj_copy
 
 

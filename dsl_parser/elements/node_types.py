@@ -31,7 +31,6 @@ class NodeType(types.Type):
         'interfaces': operation.NodeTypeInterfaces,
         'properties': properties.Schema,
     }
-
     requires = {
         'self': [parser.Value('super_type',
                               predicate=types.derived_from_predicate,
@@ -51,6 +50,8 @@ class NodeType(types.Type):
                 merge_node_type_interfaces(
                     overridden_interfaces=super_type[old_parser.INTERFACES],
                     overriding_interfaces=node_type[old_parser.INTERFACES])
+        node_type[old_parser.TYPE_HIERARCHY] = self.create_type_hierarchy(
+            super_type)
         return node_type
 
 

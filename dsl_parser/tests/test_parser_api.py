@@ -757,7 +757,8 @@ relationships:
         result = self.parse(yaml)
         self._assert_minimal_blueprint(result)
         self.assertEqual({'name': 'test_relationship', 'properties': {},
-                          'source_interfaces': {}, 'target_interfaces': {}},
+                          'source_interfaces': {}, 'target_interfaces': {},
+                          'type_hierarchy': ['test_relationship']},
                          result['relationships']['test_relationship'])
 
     def test_top_level_relationships_single_complete_relationship(self):
@@ -779,11 +780,13 @@ relationships:
         self._assert_blueprint(result)
         self.assertEqual({'name': 'empty_rel', 'properties': {},
                           'source_interfaces': {},
-                          'target_interfaces': {}},
+                          'target_interfaces': {},
+                          'type_hierarchy': ['empty_rel']},
                          result['relationships']['empty_rel'])
         test_relationship = result['relationships']['test_relationship']
         self.assertEquals('test_relationship', test_relationship['name'])
-
+        self.assertEquals(test_relationship['type_hierarchy'],
+                          ['empty_rel', 'test_relationship'])
         result_test_interface_3 = \
             test_relationship['source_interfaces']['test_interface3']
         self.assertEquals(NO_OP,
@@ -840,7 +843,8 @@ imports:
         result = self.parse(top_level_yaml)
         self._assert_blueprint(result)
         self.assertEqual({'name': 'empty_rel', 'properties': {},
-                          'source_interfaces': {}, 'target_interfaces': {}},
+                          'source_interfaces': {}, 'target_interfaces': {},
+                          'type_hierarchy': ['empty_rel']},
                          result['relationships']['empty_rel'])
         test_relationship = result['relationships']['test_relationship']
         self.assertEquals('test_relationship',
@@ -864,7 +868,7 @@ imports:
         self.assertEquals(
             2, len(test_relationship['source_interfaces'][
                 'test_interface2']))
-        self.assertEquals(5, len(test_relationship))
+        self.assertEquals(6, len(test_relationship))
 
         test_relationship2 = result['relationships']['test_relationship2']
         self.assertEquals('test_relationship2',
@@ -888,7 +892,7 @@ imports:
         self.assertEquals(
             2, len(test_relationship2['target_interfaces'][
                 'test_interface2']))
-        self.assertEquals(5, len(test_relationship2))
+        self.assertEquals(6, len(test_relationship2))
 
         test_relationship3 = result['relationships']['test_relationship3']
         self.assertEquals('test_relationship3', test_relationship3['name'])
@@ -911,7 +915,7 @@ imports:
         self.assertEquals(
             2, len(test_relationship3['target_interfaces'][
                 'test_interface2']))
-        self.assertEquals(4, len(test_relationship3))
+        self.assertEquals(5, len(test_relationship3))
 
     def test_top_level_relationship_properties(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -1261,8 +1265,8 @@ plugins:
         relationship = result['relationships']['relationship']
         parent_relationship = result['relationships']['parent_relationship']
         self.assertEquals(2, len(result['relationships']))
-        self.assertEquals(4, len(parent_relationship))
-        self.assertEquals(5, len(relationship))
+        self.assertEquals(5, len(parent_relationship))
+        self.assertEquals(6, len(relationship))
         self.assertEquals(8, len(node_relationship))
 
         self.assertEquals('parent_relationship', parent_relationship['name'])
@@ -1426,8 +1430,8 @@ plugins:
         relationship = result['relationships']['relationship']
         parent_relationship = result['relationships']['parent_relationship']
         self.assertEquals(2, len(result['relationships']))
-        self.assertEquals(4, len(parent_relationship))
-        self.assertEquals(5, len(relationship))
+        self.assertEquals(5, len(parent_relationship))
+        self.assertEquals(6, len(relationship))
         self.assertEquals(8, len(node_relationship))
 
         self.assertEquals('parent_relationship', parent_relationship['name'])

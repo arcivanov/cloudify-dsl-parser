@@ -297,7 +297,8 @@ class Context(object):
                     continue
                 if requirement == 'self':
                     requirement = element_type
-                dependencies = self.element_type_to_elements[requirement]
+                dependencies = self.element_type_to_elements.get(
+                    requirement, [])
                 for dependency in dependencies:
                     for element in _elements:
                         predicates = [r.predicate for r in requirement_values
