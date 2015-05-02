@@ -21,8 +21,7 @@ from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (properties,
                                  operation,
                                  plugins as _plugins,
-                                 types,
-                                 parser)
+                                 types)
 from dsl_parser.elements.parser import Value, Requirement
 from dsl_parser.elements.elements import Dict
 
@@ -38,9 +37,9 @@ class Relationship(types.Type):
     requires = {
         'inputs': [Requirement('resource_base', required=False)],
         _plugins.Plugins: [Value('plugins')],
-        'self': [parser.Value('super_type',
-                              predicate=types.derived_from_predicate,
-                              required=False)]
+        'self': [Value('super_type',
+                       predicate=types.derived_from_predicate,
+                       required=False)]
     }
 
     def parse(self, super_type, plugins, resource_base):
