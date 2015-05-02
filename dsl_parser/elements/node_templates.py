@@ -233,6 +233,22 @@ class NodeTemplateRelationships(Element):
                                         key=lambda child: child.name)]
 
 
+class NodeTemplateInterfaces(DictElement):
+
+    schema = Dict(type=_operation.NodeTemplateInterface)
+
+    # requires = {
+    #     NodeTemplateType: [],
+    #     _node_types.NodeTypes: [Value('node_types')]
+    # }
+    #
+    # def parse(self, node_types):
+    #     node_type = node_types[self.sibling(NodeTemplateType).value]
+    #     return interfaces_parser.merge_node_type_and_node_template_interfaces(
+    #         node_type_interfaces=node_type[old_parser.INTERFACES],
+    #         node_template_interfaces=self.build_dict_result())
+
+
 class NodeTemplate(Element):
 
     schema = {
@@ -243,29 +259,42 @@ class NodeTemplate(Element):
         'properties': NodeTemplateProperties,
     }
     requires = {
+        'inputs': [Requirement('resource_base', required=False)],
+        _plugins.Plugins: [Value('plugins')],
         _node_types.NodeTypes: [Value('node_types')]
     }
 
-    def parse(self, node_types):
+    def parse(self, node_types, plugins, resource_base):
         node = self.build_dict_result()
+        node.update({
+            'name': self.name,
+            'id': self.name,
+            'plugins': {},
+        })
 
         node_type = node_types[self.child(NodeTemplateType).value]
         interfaces = interfaces_parser.\
             merge_node_type_and_node_template_interfaces(
                 node_type_interfaces=node_type[old_parser.INTERFACES],
                 node_template_interfaces=node[old_parser.INTERFACES])
+        node[old_parser.INTERFACES] = interfaces
+
+        partial_error_message = 'in node {0} of type {1}' \
+            .format(node['id'], node['type'])
+        operations = _process_operations(
+            partial_error_message=partial_error_message,
+            interfaces=node[old_parser.INTERFACES],
+            plugins=plugins,
+            node=node,
+            error_code=10,
+            resource_base=resource_base)
+        node['operations'] = operations
 
         type_hierarchy = _create_type_hierarchy(
             type_name=self.child(NodeTemplateType).value,
             types=node_types)
+        node[old_parser.TYPE_HIERARCHY] = type_hierarchy
 
-        node.update({
-            'name': self.name,
-            'id': self.name,
-            'plugins': {},
-            old_parser.INTERFACES: interfaces,
-            old_parser.TYPE_HIERARCHY: type_hierarchy
-        })
         return node
 
 
@@ -320,20 +349,6 @@ def _post_process_nodes(processed_nodes,
                         relationships,
                         plugins,
                         resource_base):
-    # handle plugins and operations for all nodes
-    for node in processed_nodes:
-        # handle plugins and operations
-        partial_error_message = 'in node {0} of type {1}' \
-            .format(node['id'], node['type'])
-        operations = _process_operations(
-            partial_error_message=partial_error_message,
-            interfaces=node[old_parser.INTERFACES],
-            plugins=plugins,
-            node=node,
-            error_code=10,
-            resource_base=resource_base)
-        node['operations'] = operations
-
     node_name_to_node = dict((node['id'], node) for node in processed_nodes)
     contained_in_rel_types = _build_family_descendants_set(
         relationships, old_parser.CONTAINED_IN_REL_TYPE)
