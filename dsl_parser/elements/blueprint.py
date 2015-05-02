@@ -24,7 +24,7 @@ from dsl_parser.elements import (imports,
                                  relationships,
                                  workflows,
                                  policies)
-from dsl_parser.elements.elements import Element
+from dsl_parser.framework.elements import Element
 
 
 class BlueprintVersionExtractor(Element):

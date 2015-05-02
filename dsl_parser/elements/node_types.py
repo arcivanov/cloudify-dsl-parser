@@ -19,9 +19,9 @@ from dsl_parser import (parser as old_parser,
 from dsl_parser.interfaces import interfaces_parser
 from dsl_parser.elements import (operation,
                                  properties,
-                                 types,
-                                 parser)
-from dsl_parser.elements.elements import Dict
+                                 types)
+from dsl_parser.framework import requirements
+from dsl_parser.framework.elements import Dict
 
 
 class NodeType(types.Type):
@@ -32,9 +32,9 @@ class NodeType(types.Type):
         'properties': properties.Schema,
     }
     requires = {
-        'self': [parser.Value('super_type',
-                              predicate=types.derived_from_predicate,
-                              required=False)]
+        'self': [requirements.Value('super_type',
+                                    predicate=types.derived_from_predicate,
+                                    required=False)]
     }
 
     def parse(self, super_type):

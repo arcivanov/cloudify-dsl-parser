@@ -22,8 +22,8 @@ from dsl_parser.elements import (properties,
                                  operation,
                                  plugins as _plugins,
                                  types)
-from dsl_parser.elements.parser import Value, Requirement
-from dsl_parser.elements.elements import Dict
+from dsl_parser.framework.requirements import Value, Requirement
+from dsl_parser.framework.elements import Dict
 
 
 class Relationship(types.Type):

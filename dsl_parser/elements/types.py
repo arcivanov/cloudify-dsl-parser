@@ -14,9 +14,9 @@
 #    * limitations under the License.
 
 from dsl_parser import exceptions
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf)
+from dsl_parser.framework.elements import (DictElement,
+                                           Element,
+                                           Leaf)
 
 
 class Types(DictElement):

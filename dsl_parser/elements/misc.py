@@ -17,10 +17,10 @@ from dsl_parser import (version,
                         exceptions,
                         models)
 from dsl_parser.elements import properties
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf,
-                                          Dict)
+from dsl_parser.framework.elements import (DictElement,
+                                           Element,
+                                           Leaf,
+                                           Dict)
 
 
 class ToscaDefinitionsVersion(Element):

@@ -13,8 +13,8 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 
-from dsl_parser.elements.parser import Parser
-from dsl_parser.elements.elements import Element
+from dsl_parser.framework.parser import Parser
+from dsl_parser.framework.elements import Element
 from dsl_parser.elements import misc
 
 

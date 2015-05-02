@@ -16,7 +16,8 @@
 import networkx as nx
 
 from dsl_parser import exceptions
-from dsl_parser.elements import elements
+from dsl_parser.framework import elements
+from dsl_parser.framework.requirements import Requirement
 
 
 class Parser(object):
@@ -345,32 +346,3 @@ class Context(object):
 
     def descendants(self, element):
         return nx.descendants(self.element_tree, element)
-
-
-class Requirement(object):
-
-    def __init__(self,
-                 name,
-                 parsed=False,
-                 multiple_results=False,
-                 required=True,
-                 predicate=None):
-        self.name = name
-        self.parsed = parsed
-        self.multiple_results = multiple_results
-        self.required = required
-        self.predicate = predicate
-
-
-class Value(Requirement):
-
-    def __init__(self,
-                 name,
-                 multiple_results=False,
-                 required=True,
-                 predicate=None):
-        super(Value, self).__init__(name,
-                                    parsed=True,
-                                    multiple_results=multiple_results,
-                                    required=required,
-                                    predicate=predicate)

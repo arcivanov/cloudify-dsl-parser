@@ -24,12 +24,12 @@ from dsl_parser.elements import (node_types as _node_types,
                                  plugins as _plugins,
                                  relationships as _relationships,
                                  operation as _operation)
-from dsl_parser.elements.parser import Value, Requirement
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf,
-                                          Dict,
-                                          List)
+from dsl_parser.framework.requirements import Value, Requirement
+from dsl_parser.framework.elements import (DictElement,
+                                           Element,
+                                           Leaf,
+                                           Dict,
+                                           List)
 
 
 class NodeTemplateType(Element):

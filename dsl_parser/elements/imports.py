@@ -22,9 +22,9 @@ import urllib2
 from dsl_parser import (exceptions,
                         parser as old_parser,
                         version)
-from dsl_parser.elements.elements import (Element,
-                                          Leaf,
-                                          List)
+from dsl_parser.framework.elements import (Element,
+                                           Leaf,
+                                           List)
 
 MERGE_NO_OVERRIDE = set([
     old_parser.INTERFACES,

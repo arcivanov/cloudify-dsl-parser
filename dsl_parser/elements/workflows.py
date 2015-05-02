@@ -16,11 +16,11 @@
 from dsl_parser import parser as old_parser
 from dsl_parser.elements import (properties,
                                  plugins as _plugins)
-from dsl_parser.elements.parser import Value, Requirement
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf,
-                                          Dict)
+from dsl_parser.framework.requirements import Value, Requirement
+from dsl_parser.framework.elements import (DictElement,
+                                           Element,
+                                           Leaf,
+                                           Dict)
 
 
 class WorkflowMapping(Element):

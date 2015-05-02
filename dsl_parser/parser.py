@@ -26,6 +26,7 @@ from dsl_parser import (constants,
                         functions)
 from dsl_parser.exceptions import (DSLParsingFormatException,
                                    DSLParsingLogicException)
+from dsl_parser.framework.parser import Parser
 
 
 NODE_TEMPLATES = 'node_templates'
@@ -80,7 +81,6 @@ def parse(dsl_string, resources_base_url=None):
 
 
 def _parse(dsl_string, resources_base_url, dsl_location=None):
-    from dsl_parser.elements.parser import Parser
     from dsl_parser.elements import blueprint
 
     parsed_dsl = _load_yaml(yaml_stream=dsl_string,

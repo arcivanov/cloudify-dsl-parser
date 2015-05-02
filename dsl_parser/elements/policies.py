@@ -17,11 +17,11 @@ from dsl_parser import (exceptions,
                         utils)
 from dsl_parser.elements import (node_templates,
                                  properties)
-from dsl_parser.elements.parser import Value
-from dsl_parser.elements.elements import (DictElement,
-                                          Element,
-                                          Leaf,
-                                          Dict)
+from dsl_parser.framework.requirements import Value
+from dsl_parser.framework.elements import (DictElement,
+                                           Element,
+                                           Leaf,
+                                           Dict)
 
 
 class PolicyTriggerSource(Element):
