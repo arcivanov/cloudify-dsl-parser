@@ -128,11 +128,16 @@ class Parser(object):
                 'Missing required value for {0}'.format(element.name))
 
         def validate_schema(schema):
-            if (isinstance(schema, (dict, elements.Dict)) and
-                    not isinstance(value, dict)):
-                raise exceptions.DSLParsingFormatException(
-                    1, 'Expected dict value for {0} but found {1}'
-                       .format(element.name, value))
+            if isinstance(schema, (dict, elements.Dict)):
+                if not isinstance(value, dict):
+                    raise exceptions.DSLParsingFormatException(
+                        1, 'Expected dict value for {0} but found {1}'
+                           .format(element.name, value))
+                for key in value.keys():
+                    if not isinstance(key, basestring):
+                        raise exceptions.DSLParsingFormatException(
+                            1, 'Schema/Dict keys must be strings for {0} but'
+                               ' found {1}'.format(element.name, key))
 
             if strict and isinstance(schema, dict):
                 for key in value.keys():
