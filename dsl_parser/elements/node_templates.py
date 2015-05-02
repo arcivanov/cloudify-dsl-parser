@@ -309,6 +309,7 @@ class NodeTemplate(Element):
             'name': self.name,
             'id': self.name,
             'plugins': {},
+            old_parser.TYPE_HIERARCHY: node_type[old_parser.TYPE_HIERARCHY]
         })
 
         interfaces = interfaces_parser.\
@@ -334,8 +335,6 @@ class NodeTemplate(Element):
                                          node_name_to_node=node_name_to_node,
                                          plugins=plugins,
                                          resource_base=resource_base)
-
-        node[old_parser.TYPE_HIERARCHY] = node_type[old_parser.TYPE_HIERARCHY]
 
         contained_in = self.child(NodeTemplateRelationships).provided[
             'contained_in']
