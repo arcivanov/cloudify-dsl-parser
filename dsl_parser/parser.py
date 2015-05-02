@@ -137,17 +137,6 @@ def _extract_plugin_names_and_operation_mapping_from_interface(
     return result
 
 
-def _validate_relationship_fields(rel_obj, plugins, rel_name, resource_base):
-    for interfaces in [SOURCE_INTERFACES, TARGET_INTERFACES]:
-        for interface_name, interface in rel_obj[interfaces].items():
-            _extract_plugin_names_and_operation_mapping_from_interface(
-                interface,
-                plugins,
-                19,
-                'Relationship: {0}'.format(rel_name),
-                resource_base=resource_base)
-
-
 def _extract_plugin_name_and_operation_mapping_from_operation(
         plugins,
         operation_name,

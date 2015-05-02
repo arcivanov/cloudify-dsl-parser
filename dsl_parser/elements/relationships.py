@@ -52,7 +52,7 @@ class Relationship(types.Type):
             is_relationships=True,
             merging_func=_relationship_type_merging_function)
 
-        old_parser._validate_relationship_fields(
+        _validate_relationship_fields(
             relationship_type, plugins,
             relationship_type_name,
             resource_base)
@@ -64,6 +64,18 @@ class Relationship(types.Type):
 class Relationships(types.Types):
 
     schema = Dict(type=Relationship)
+
+
+def _validate_relationship_fields(rel_obj, plugins, rel_name, resource_base):
+    for interfaces in [old_parser.SOURCE_INTERFACES,
+                       old_parser.TARGET_INTERFACES]:
+        for interface_name, interface in rel_obj[interfaces].items():
+            old_parser._extract_plugin_names_and_operation_mapping_from_interface(  # noqa
+                interface,
+                plugins,
+                19,
+                'Relationship: {0}'.format(rel_name),
+                resource_base=resource_base)
 
 
 def _relationship_type_merging_function(overridden_relationship_type,
